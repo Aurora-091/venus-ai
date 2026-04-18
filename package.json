@@ -1,0 +1,18 @@
+{
+  "name": "aurora-test-0093",
+  "description": "A MERN application with React, Recoil, Express, MongoDB, and Socket.IO",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "cf-typegen": "npm --prefix backend run cf-typegen",
+    "check": "npm --prefix frontend run check",
+    "dev": "backend\\node_modules\\.bin\\concurrently.cmd -k -n backend,frontend -c green,cyan \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:client": "npm --prefix frontend run dev",
+    "dev:server": "npm --prefix backend run dev",
+    "preview": "npm --prefix frontend run preview",
+    "start": "npm --prefix backend run start",
+    "db:generate": "npm --prefix backend run db:generate",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:studio": "npm --prefix backend run db:studio"
+  }
+}

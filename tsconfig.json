@@ -1,0 +1,25 @@
+{
+	"files": [],
+	"references": [
+		{
+			"path": "./frontend/tsconfig.app.json"
+		},
+		{
+			"path": "./frontend/tsconfig.node.json"
+		},
+		{
+			"path": "./backend/tsconfig.worker.json"
+		}
+	],
+	"compilerOptions": {
+		"types": [
+			"./backend/worker-configuration.d.ts",
+			"node"
+		],
+		"paths": {
+			"@/*": [
+				"./frontend/src/*"
+			]
+		}
+	}
+}
