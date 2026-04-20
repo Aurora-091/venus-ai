@@ -1,9 +1,22 @@
+import { supabase } from "./supabase";
+
 const base = import.meta.env.VITE_API_BASE_URL || "/api";
 
 async function req(path: string, opts?: RequestInit) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  
+  const headers: Record<string, string> = { 
+    "Content-Type": "application/json", 
+    ...(opts?.headers as Record<string, string> || {}) 
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${base}${path}`, {
-    headers: { "Content-Type": "application/json", ...opts?.headers },
-    credentials: "include",
+    headers,
     ...opts,
   });
   if (!res.ok) throw new Error(await res.text());

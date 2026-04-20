@@ -5,10 +5,8 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
-import { connectDatabase } from "./config/database.js";
-import { attachSession } from "./middleware/session.js";
+import { attachSession } from "./middleware/auth.js";
 import { createApiRouter } from "./routes/api.js";
-import { authRouter } from "./routes/auth.js";
 import { configureSocket } from "./socket.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,8 +16,6 @@ const app = express();
 const server = http.createServer(app);
 const port = Number(process.env.PORT || 5000);
 const clientOrigin = process.env.CLIENT_ORIGIN || "http://127.0.0.1:5682";
-
-await connectDatabase();
 
 const io = new Server(server, {
   cors: {
@@ -34,7 +30,6 @@ app.use(attachSession);
 
 configureSocket(io);
 
-app.use("/api/auth", authRouter);
 app.use("/api", createApiRouter(io));
 
 server.listen(port, "127.0.0.1", () => {

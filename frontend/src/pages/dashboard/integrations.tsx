@@ -213,6 +213,23 @@ export default function Integrations({ tenant }: Props) {
         </div>
       )}
 
+      {/* ── Tier 1 Core Integrations ── */}
+      <div className="text-xs font-medium text-[#475569] uppercase tracking-wide mb-3">Tier 1 Integrations</div>
+
+      {/* ── Shopify ── */}
+      <IntCard
+        icon={<ShopifyIcon />}
+        title="Shopify"
+        category="E-commerce"
+        desc="Sync products, inventory, track orders, and process returns during live calls."
+        connected={tenant?.shopifyConnected} // Dummy check
+        loading={loading}
+        onConnect={() => showMsg("Shopify integration is managed via the Agent Studio Tools tab.")}
+        onDisconnect={() => showMsg("Cannot disconnect from here.")}
+        connectLabel="Manage in Agent Studio"
+        connectedDetail={tenant?.shopifyConnected ? "Syncing orders & checking inventory live" : undefined}
+      />
+
       {/* ── Google Calendar ── */}
       <IntCard
         icon={<CalIcon />}
@@ -229,6 +246,7 @@ export default function Integrations({ tenant }: Props) {
       />
 
       {/* ── Google Sheets ── */}
+      <div className="mt-8 text-xs font-medium text-[#475569] uppercase tracking-wide mb-3">Data & Export</div>
       <div className={`bg-[#0F1623] border rounded-2xl p-5 transition-colors ${sheetsStatus?.connected ? "border-emerald-500/30" : "border-[#1E2A3E]"}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -486,6 +504,15 @@ function ExcelIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="3" width="18" height="18" rx="2" fill="#1a4d2a" stroke="#22c55e" strokeWidth="1.5"/>
       <path d="M7 8l3 4-3 4M13 8h4M13 12h3M13 16h4" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function ShopifyIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M6.5 4.5l11-2 2 12.5-13 4-2-14.5z" fill="#95BF47" opacity="0.2" />
+      <path d="M8 8V6a4 4 0 0 1 8 0v2m-9 1l-1 11h12l-1-11H7z" stroke="#95BF47" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }

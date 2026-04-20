@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 
 interface Props { tenant?: any; }
-type Tab = "local" | "live";
+type Tab = "local" | "live" | "inbox";
 type Outcome = "all" | "completed" | "escalated" | "missed";
 
 function fmtDuration(secs: number) {
@@ -119,8 +119,8 @@ export default function Calls({ tenant }: Props) {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 mb-5 bg-[#0F1623] border border-[#1E2A3E] rounded-xl p-1 w-fit">
-        {([["live", "ElevenLabs Live"], ["local", "Local DB"]] as const).map(([t, label]) => (
-          <button key={t} onClick={() => setTab(t)}
+        {([["live", "ElevenLabs Live"], ["local", "Local DB"], ["inbox", "Inbox / Actions"]] as const).map(([t, label]) => (
+          <button key={t} onClick={() => setTab(t as Tab)}
             className={`text-xs px-4 py-1.5 rounded-lg transition-colors ${tab === t ? "bg-[#1E2A3E] text-white" : "text-[#475569] hover:text-[#94A3B8]"}`}>
             {label}
           </button>
@@ -149,7 +149,11 @@ export default function Calls({ tenant }: Props) {
                   className="grid grid-cols-[1fr_90px_80px_100px_120px_80px] px-5 py-3.5 hover:bg-[#0A0E1A] cursor-pointer transition-colors"
                   onClick={() => openConvDetail(conv)}>
                   <div>
-                    <div className="text-sm font-medium text-white">{conv.call_summary_title || "Call"}</div>
+                    <div className="text-sm font-medium text-white flex items-center gap-2">
+                      {conv.call_summary_title || "Call"}
+                      <span className="bg-blue-500/10 text-blue-400 text-[9px] px-1.5 py-0.5 rounded border border-blue-500/20 uppercase tracking-wider">Inquiry</span>
+                      <span className="bg-emerald-500/10 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-wider">Neutral</span>
+                    </div>
                     <div className="text-xs text-[#475569] mt-0.5 font-mono">{conv.conversation_id}</div>
                   </div>
                   <div className="flex items-center">
@@ -206,7 +210,11 @@ export default function Calls({ tenant }: Props) {
                     className="grid grid-cols-[1fr_80px_100px_100px_100px] px-5 py-3.5 hover:bg-[#0A0E1A] cursor-pointer transition-colors"
                     onClick={() => { setSelected(call); setConvDetail(null); }}>
                     <div>
-                      <div className="text-sm font-mono">{call.callerNumber || "Unknown"}</div>
+                      <div className="text-sm font-mono flex items-center gap-2">
+                        {call.callerNumber || "Unknown"}
+                        <span className="bg-purple-500/10 text-purple-400 text-[9px] px-1.5 py-0.5 rounded border border-purple-500/20 uppercase tracking-wider">Support</span>
+                        <span className="bg-emerald-500/10 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-wider">Positive</span>
+                      </div>
                       <div className="text-xs text-[#475569] mt-0.5 truncate max-w-xs">{call.summary || "—"}</div>
                     </div>
                     <div className="flex items-center">
@@ -225,6 +233,45 @@ export default function Calls({ tenant }: Props) {
             )}
           </div>
         </>
+      )}
+
+      {tab === "inbox" && (
+        <div className="bg-[#0F1623] border border-[#1E2A3E] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#1E2A3E] flex items-center justify-between">
+            <h2 className="text-sm font-medium">Inbox / Actions</h2>
+            <div className="text-xs text-[#475569]">Preview generated tickets and actions taken by agent</div>
+          </div>
+          <div className="divide-y divide-[#1E2A3E]">
+            {[
+              { id: "TKT-001", title: "Refund requested for missing item", type: "Ticket", status: "Needs Review", caller: "+14155552671", date: "2 hrs ago" },
+              { id: "ACT-045", title: "Sent follow-up SMS with booking link", type: "Action", status: "Completed", caller: "+12125550982", date: "5 hrs ago" },
+              { id: "TKT-002", title: "Escalated: Customer extremely upset", type: "Ticket", status: "Open", caller: "+15125558833", date: "1 day ago" },
+            ].map((item, i) => (
+              <div key={i} className="px-5 py-4 hover:bg-[#0A0E1A] transition-colors cursor-pointer flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-white">{item.title}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                      item.type === "Ticket" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                    }`}>{item.type}</span>
+                  </div>
+                  <div className="text-xs text-[#475569] flex gap-3">
+                    <span>{item.id}</span>
+                    <span>•</span>
+                    <span className="font-mono">{item.caller}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    item.status === "Completed" ? "bg-emerald-500/10 text-emerald-400" :
+                    item.status === "Open" ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-400"
+                  }`}>{item.status}</span>
+                  <span className="text-xs text-[#475569]">{item.date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Detail drawer */}

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { google } from "googleapis";
 import {
   createCallLog,
   createTenant,
@@ -10,14 +11,58 @@ import {
   listOrders,
   listTenants,
   updateTenant,
+  upsertIntegration,
+  getIntegration,
 } from "../services/repositories.js";
-import { requireAuth } from "../middleware/session.js";
+import { requireAuth } from "../middleware/auth.js";
 
 export function createApiRouter(io) {
   const router = Router();
 
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    "http://localhost:5000/api/auth/google/callback"
+  );
+
   router.get("/ping", (_req, res) => {
     res.json({ ok: true, stack: "mern", ts: Date.now() });
+  });
+
+  // Open callbacks
+  router.get("/auth/google/callback", async (req, res) => {
+    const code = req.query.code;
+    const tenantId = req.query.state;
+    if (!code || !tenantId) return res.status(400).send("Invalid callback");
+
+    try {
+      const { tokens } = await oauth2Client.getToken(code);
+      await upsertIntegration(tenantId, "google_calendar", {
+        refresh_token: tokens.refresh_token,
+        access_token: tokens.access_token,
+        connected: true,
+        calendar_id: "primary"
+      });
+      res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: "calendar_connected" }, "*");
+                window.close();
+              } else {
+                const origin = "${process.env.CLIENT_ORIGIN || 'http://127.0.0.1:5682'}";
+                window.location.href = origin + "/dashboard?tenant=${tenantId}&calendar=success";
+              }
+            </script>
+            <p>Connected securely! You can close this window.</p>
+          </body>
+        </html>
+      `);
+    } catch (e) {
+      console.error("Google Auth Error:", e);
+      res.status(500).send("Google authentication failed");
+    }
   });
 
   router.use(requireAuth);
@@ -157,18 +202,86 @@ export function createApiRouter(io) {
   });
 
   router.post("/tenants/:id/tools/check-availability", async (req, res) => {
-    const requestedDate = req.body?.date || req.body?.requested_date || "the requested date";
-    res.json({
-      result: `Available slots on ${requestedDate}: 10:00 AM, 11:00 AM, 2:00 PM, 3:30 PM. Which time works for you?`,
-    });
+    const requestedDate = req.body?.date || req.body?.requested_date;
+    if (!requestedDate) {
+      return res.json({ result: "Please provide a valid date to check availability." });
+    }
+
+    try {
+      const integration = await getIntegration(req.params.id, "google_calendar");
+      if (!integration?.connected || !integration.refresh_token) {
+        return res.json({ result: "Google Calendar is not connected. I cannot check availability right now." });
+      }
+
+      oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
+      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+      
+      const timeMin = new Date(`${requestedDate}T00:00:00.000Z`);
+      const timeMax = new Date(`${requestedDate}T23:59:59.999Z`);
+      
+      const response = await calendar.events.list({
+        calendarId: integration.calendar_id || "primary",
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: true,
+        orderBy: "startTime",
+      });
+
+      const events = response.data.items || [];
+      if (events.length === 0) {
+        return res.json({ result: `There are no scheduled events on ${requestedDate}. All slots are available.` });
+      }
+
+      const busyTimes = events.map(e => {
+        const start = e.start.dateTime || e.start.date;
+        const end = e.end.dateTime || e.end.date;
+        return `${start} to ${end}`;
+      });
+
+      res.json({ result: `On ${requestedDate}, the following times are busy: ${busyTimes.join(", ")}. Please recommend an open slot outside of these hours.` });
+    } catch (e) {
+      console.error("Calendar Check Availability Error:", e);
+      res.json({ result: "I could not check the calendar right now due to a system error." });
+    }
   });
 
   router.post("/tenants/:id/tools/book-appointment", async (req, res) => {
     const callerName = req.body?.caller_name || req.body?.name || "the caller";
-    const slot = req.body?.slot || req.body?.time || "the selected slot";
-    res.json({
-      result: `Appointment confirmed for ${callerName} at ${slot}.`,
-    });
+    const slot = req.body?.slot || req.body?.time;
+    const service = req.body?.service || "General Appointment";
+
+    if (!slot) {
+      return res.json({ result: "Please specify an exact date and time for the appointment." });
+    }
+
+    try {
+      const integration = await getIntegration(req.params.id, "google_calendar");
+      if (!integration?.connected || !integration.refresh_token) {
+        return res.json({ result: "Google Calendar is not connected. I cannot book the appointment right now." });
+      }
+
+      oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
+      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+      const startTime = new Date(slot);
+      const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+      const event = await calendar.events.insert({
+        calendarId: integration.calendar_id || "primary",
+        requestBody: {
+          summary: `${service} - ${callerName}`,
+          start: { dateTime: startTime.toISOString() },
+          end: { dateTime: endTime.toISOString() },
+        },
+      });
+
+      res.json({
+        result: `Appointment successfully booked for ${callerName} at ${slot}. Event created on Google Calendar!`,
+      });
+    } catch (e) {
+      console.error("Calendar Booking Error:", e);
+      res.json({ result: "Failed to book the appointment due to a system error." });
+    }
   });
 
   router.post("/tenants/:id/tools/order-lookup", async (req, res) => {
@@ -293,14 +406,30 @@ export function createApiRouter(io) {
   });
 
   router.get("/tenants/:id/calendar/auth-url", (_req, res) => {
-    res.json({ url: "" });
+    const url = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      prompt: "consent", // Force to always get a refresh_token
+      scope: ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly"],
+      state: _req.params.id,
+    });
+    res.json({ url });
   });
 
-  router.get("/tenants/:id/calendar/status", (_req, res) => {
-    res.json({ connected: false, calendarId: "primary" });
+  router.get("/tenants/:id/calendar/status", async (req, res) => {
+    const integration = await getIntegration(req.params.id, "google_calendar");
+    if (integration?.connected) {
+      res.json({ connected: true, calendarId: integration.calendar_id });
+    } else {
+      res.json({ connected: false, calendarId: "primary" });
+    }
   });
 
-  router.delete("/tenants/:id/calendar", (_req, res) => {
+  router.delete("/tenants/:id/calendar", async (req, res) => {
+    await upsertIntegration(req.params.id, "google_calendar", {
+      connected: false,
+      refresh_token: null,
+      access_token: null
+    });
     res.json({ success: true });
   });
 

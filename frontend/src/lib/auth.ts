@@ -1,19 +1,7 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import { sessionLoadingState, sessionUserState } from "../state/appState";
-
-async function authRequest(path: string, body?: unknown) {
-  const res = await fetch(`/api/auth${path}`, {
-    method: body ? "POST" : "GET",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    credentials: "include",
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: data.error || "Request failed", data: null };
-  return { data, error: null };
-}
+import { supabase } from "./supabase";
 
 export const authClient = {
   useSession() {
@@ -22,13 +10,34 @@ export const authClient = {
 
     const loadSession = useCallback(async () => {
       setPending(true);
-      const res = await authRequest("/session");
-      setUser(res.data?.user || null);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Extract metadata we stored
+        const meta = session.user.user_metadata || {};
+        setUser({
+          id: session.user.id,
+          email: session.user.email || "",
+          name: meta.name || session.user.email?.split("@")[0] || "",
+          role: meta.role || "tenant_admin",
+          tenantId: meta.tenantId || "",
+        });
+      } else {
+        setUser(null);
+      }
       setPending(false);
     }, [setPending, setUser]);
 
     useEffect(() => {
       loadSession();
+      
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+        loadSession();
+      });
+      
+      return () => {
+        subscription.unsubscribe();
+      };
     }, [loadSession]);
 
     return {
@@ -38,10 +47,30 @@ export const authClient = {
     };
   },
   signUp: {
-    email: (body: { name: string; email: string; password: string }) => authRequest("/sign-up", body),
+    email: async (body: { name: string; email: string; password: string }) => {
+      const { data, error } = await supabase.auth.signUp({
+        email: body.email,
+        password: body.password,
+        options: {
+          data: {
+            name: body.name,
+          }
+        }
+      });
+      return { data, error };
+    },
   },
   signIn: {
-    email: (body: { email: string; password: string }) => authRequest("/sign-in", body),
+    email: async (body: { email: string; password: string }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: body.email,
+        password: body.password,
+      });
+      return { data, error };
+    },
   },
-  signOut: () => authRequest("/sign-out", {}),
+  signOut: async () => {
+    const { error } = await supabase.auth.signOut();
+    return { data: null, error };
+  },
 };

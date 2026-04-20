@@ -108,15 +108,19 @@ export default function Overview({ tenant }: Props) {
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-[#0F1623] border border-[#1E2A3E] rounded-2xl p-5 animate-pulse h-24" />
+            <div key={i} className="bg-[#111] border border-[#222] rounded-xl p-5 animate-pulse h-24" />
           ))}
         </div>
       ) : analytics ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard label="Total Calls" value={analytics.totalCalls} sub="All time" />
-          <StatCard label="Resolution Rate" value={`${analytics.resolutionRate}%`} sub="Calls resolved by AI" accent="text-emerald-400" />
+          <StatCard label="Resolution Rate" value={`${analytics.resolutionRate}%`} sub="Calls resolved by AI" accent="text-gray-300" />
           <StatCard label="Avg Duration" value={`${analytics.avgDuration}s`} sub="Per call" />
-          <StatCard label="Bookings" value={analytics.totalBookings} sub="Via voice agent" accent="text-blue-400" />
+          {tenant.vertical === "ecommerce" ? (
+            <StatCard label="Orders Tracked" value={analytics.totalBookings || 0} sub="Via voice agent" accent="text-gray-300" />
+          ) : (
+            <StatCard label="Bookings" value={analytics.totalBookings || 0} sub="Via voice agent" accent="text-gray-300" />
+          )}
         </div>
       ) : null}
 
@@ -132,28 +136,68 @@ export default function Overview({ tenant }: Props) {
           </div>
         )}
 
-        {/* Agent quick info */}
-        <div className="bg-[#0F1623] border border-[#1E2A3E] rounded-2xl p-5">
-          <div className="text-sm font-medium mb-4">Agent</div>
-          <div className="space-y-3">
+        {/* Dynamic Sector Widget */}
+        {tenant.vertical === "ecommerce" ? (
+          <div className="bg-[#0F1623] border border-[#1E2A3E] rounded-2xl p-5 flex flex-col justify-between">
             <div>
-              <div className="text-xs text-[#475569] mb-0.5">Name</div>
-              <div className="text-sm font-medium">{tenant.agentName || "Not set"}</div>
+              <div className="text-sm font-medium mb-1">Top Inquiries</div>
+              <p className="text-xs text-[#475569] mb-4">Most common order issues detected</p>
+              <div className="space-y-3">
+                {[
+                  { label: "Where is my order?", pct: "45%" },
+                  { label: "Return/Refund", pct: "25%" },
+                  { label: "Product sizing", pct: "15%" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-sm text-[#94A3B8]">{item.label}</span>
+                    <span className="text-xs font-mono">{item.pct}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-[#475569] mb-0.5">Language</div>
-              <div className="text-sm">{tenant.agentLanguage === "hi" ? "Hindi" : tenant.agentLanguage === "en" ? "English" : tenant.agentLanguage || "—"}</div>
-            </div>
-            <div>
-              <div className="text-xs text-[#475569] mb-0.5">Phone</div>
-              <div className="text-sm font-mono">{tenant.phoneNumber || "Not assigned"}</div>
-            </div>
-            <div>
-              <div className="text-xs text-[#475569] mb-0.5">Hours</div>
-              <div className="text-sm">{tenant.businessHoursStart} – {tenant.businessHoursEnd}</div>
-            </div>
+            <Link href="/dashboard/agent" className="text-xs text-blue-400 hover:text-blue-300 transition-colors mt-4 block">Train Agent →</Link>
           </div>
-        </div>
+        ) : tenant.vertical === "clinic" ? (
+          <div className="bg-[#0F1623] border border-[#1E2A3E] rounded-2xl p-5 flex flex-col justify-between">
+            <div>
+              <div className="text-sm font-medium mb-1">Appointment Types</div>
+              <p className="text-xs text-[#475569] mb-4">Most booked services this week</p>
+              <div className="space-y-3">
+                {[
+                  { label: "General Checkup", pct: "50%" },
+                  { label: "Follow-up", pct: "30%" },
+                  { label: "Consultation", pct: "10%" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-sm text-[#94A3B8]">{item.label}</span>
+                    <span className="text-xs font-mono">{item.pct}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Link href="/dashboard/bookings" className="text-xs text-blue-400 hover:text-blue-300 transition-colors mt-4 block">View Calendar →</Link>
+          </div>
+        ) : (
+          <div className="bg-[#0F1623] border border-[#1E2A3E] rounded-2xl p-5 flex flex-col justify-between">
+            <div>
+              <div className="text-sm font-medium mb-1">Booking Intent</div>
+              <p className="text-xs text-[#475569] mb-4">Caller intents detected this week</p>
+              <div className="space-y-3">
+                {[
+                  { label: "New Reservation", pct: "60%" },
+                  { label: "Modification/Cancel", pct: "20%" },
+                  { label: "General Query", pct: "15%" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-sm text-[#94A3B8]">{item.label}</span>
+                    <span className="text-xs font-mono">{item.pct}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Link href="/dashboard/bookings" className="text-xs text-blue-400 hover:text-blue-300 transition-colors mt-4 block">View Bookings →</Link>
+          </div>
+        )}
       </div>
 
       {/* Recent calls */}

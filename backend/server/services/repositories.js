@@ -1,116 +1,114 @@
+import { supabase } from "../lib/supabase.js";
 import crypto from "node:crypto";
-import mongoose from "mongoose";
-import { Booking } from "../models/Booking.js";
-import { CallLog } from "../models/CallLog.js";
-import { Order } from "../models/Order.js";
-import { Tenant } from "../models/Tenant.js";
-import { User } from "../models/User.js";
-import { memoryStore } from "../store/memoryStore.js";
 
-const isMongoReady = () => mongoose.connection.readyState === 1;
-const asLean = (doc) => doc?.toJSON?.() || doc;
 const makeSlug = (name, id) => `${name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")}-${id.slice(0, 6)}`;
 
+// Users are managed by Supabase Auth, but we can query the profiles table or get user by ID using Admin API if needed.
+// Most endpoints already rely on req.user which is populated from the JWT.
 export async function findUserByEmail(email) {
-  if (isMongoReady()) return User.findOne({ email: email.toLowerCase() }).lean();
-  return memoryStore.users.find((user) => user.email === email.toLowerCase()) || null;
+  const { data } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase()).single();
+  return data || null;
 }
 
 export async function findUserById(id) {
-  if (isMongoReady()) return User.findById(id).lean();
-  return memoryStore.users.find((user) => user.id === id) || null;
-}
-
-export async function createUser(payload) {
-  if (isMongoReady()) return asLean(await User.create(payload));
-  const user = { id: crypto.randomUUID(), role: "tenant_admin", tenantId: "", ...payload };
-  memoryStore.users.push(user);
-  return user;
+  const { data } = await supabase.from('profiles').select('*').eq('id', id).single();
+  return data || null;
 }
 
 export async function listTenants(user) {
-  if (isMongoReady()) {
-    if (user?.role === "super_admin") return Tenant.find().sort({ createdAt: -1 });
-    if (user?.tenantId) return Tenant.find({ _id: user.tenantId });
-    return [];
+  if (user?.role === "super_admin") {
+    const { data } = await supabase.from('tenants').select('*').order('created_at', { ascending: false });
+    return data || [];
   }
-
-  if (user?.role === "super_admin") return memoryStore.tenants;
-  if (user?.tenantId) return memoryStore.tenants.filter((tenant) => tenant.id === user.tenantId);
-  return memoryStore.tenants;
+  if (user?.tenantId) {
+    const { data } = await supabase.from('tenants').select('*').eq('id', user.tenantId);
+    return data || [];
+  }
+  return [];
 }
 
 export async function findTenantById(id) {
-  if (isMongoReady()) return Tenant.findById(id).lean();
-  return memoryStore.tenants.find((tenant) => tenant.id === id) || null;
+  const { data } = await supabase.from('tenants').select('*').eq('id', id).single();
+  return data || null;
 }
 
 export async function createTenant(payload, user) {
   const id = crypto.randomUUID();
   const tenant = {
-    ...payload,
+    id,
+    name: payload.name,
+    vertical: payload.vertical,
     slug: makeSlug(payload.name, id),
-    agentName: payload.agentName || "Aria",
-    agentLanguage: payload.agentLanguage || "en",
-    agentGreeting: buildGreeting(payload.vertical, payload.agentName || "Aria", payload.name),
+    agent_name: payload.agentName || "Aria",
+    agent_language: payload.agentLanguage || "en",
+    agent_greeting: buildGreeting(payload.vertical, payload.agentName || "Aria", payload.name),
     status: "active",
     plan: "starter",
   };
 
-  if (isMongoReady()) {
-    const created = await Tenant.create(tenant);
-    if (user?._id && user.role !== "super_admin") {
-      await User.findByIdAndUpdate(user._id, { tenantId: created._id.toString(), role: "tenant_admin" });
-    }
-    return created.toJSON();
-  }
+  const { data: created, error } = await supabase.from('tenants').insert(tenant).select('*').single();
+  if (error) throw new Error(error.message);
 
-  const created = { id, ...tenant, createdAt: new Date().toISOString() };
-  memoryStore.tenants.unshift(created);
-  const storeUser = memoryStore.users.find((item) => item.id === user?.id);
-  if (storeUser && storeUser.role !== "super_admin") {
-    storeUser.tenantId = id;
-    storeUser.role = "tenant_admin";
+  if (user?.id && user.role !== "super_admin") {
+    // Update Supabase auth user metadata
+    await supabase.auth.admin.updateUserById(user.id, {
+      user_metadata: { role: "tenant_admin", tenantId: id }
+    });
+    // Update profile table
+    await supabase.from('profiles').update({ role: "tenant_admin", tenant_id: id }).eq('id', user.id);
   }
-  return created;
+  
+  // Format for frontend
+  return formatTenant(created);
 }
 
 export async function updateTenant(id, payload) {
-  if (isMongoReady()) return Tenant.findByIdAndUpdate(id, payload, { new: true });
-  const tenant = memoryStore.tenants.find((item) => item.id === id);
-  if (!tenant) return null;
-  Object.assign(tenant, payload);
-  return tenant;
+  // Map JS casing to DB casing before update (if needed)
+  const updates = {};
+  if (payload.name) updates.name = payload.name;
+  if (payload.timezone) updates.timezone = payload.timezone;
+  if (payload.agentId) updates.agent_id = payload.agentId;
+  if (payload.phoneNumberId) updates.phone_number_id = payload.phoneNumberId;
+  if (payload.phoneNumber) updates.phone_number = payload.phoneNumber;
+  if (payload.agentStatus) updates.agent_status = payload.agentStatus;
+
+  const { data, error } = await supabase.from('tenants').update(updates).eq('id', id).select('*').single();
+  if (error || !data) return null;
+  return formatTenant(data);
 }
 
 export async function deleteTenant(id) {
-  if (isMongoReady()) {
-    await Tenant.findByIdAndDelete(id);
-    return;
-  }
-  memoryStore.tenants = memoryStore.tenants.filter((tenant) => tenant.id !== id);
+  await supabase.from('tenants').delete().eq('id', id);
 }
 
 export async function listCalls(tenantId) {
-  if (isMongoReady()) return CallLog.find({ tenantId }).sort({ createdAt: -1 }).limit(50);
-  return memoryStore.calls.filter((call) => call.tenantId === tenantId);
+  const { data } = await supabase.from('call_logs').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(50);
+  return (data || []).map(formatCallLog);
 }
 
 export async function listBookings(tenantId) {
-  if (isMongoReady()) return Booking.find({ tenantId }).sort({ createdAt: -1 }).limit(50);
-  return memoryStore.bookings.filter((booking) => booking.tenantId === tenantId);
+  const { data } = await supabase.from('bookings').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(50);
+  return (data || []).map(formatBooking);
 }
 
 export async function listOrders(tenantId) {
-  if (isMongoReady()) return Order.find({ tenantId }).sort({ createdAt: -1 }).limit(50);
-  return memoryStore.orders.filter((order) => order.tenantId === tenantId);
+  const { data } = await supabase.from('demo_orders').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(50);
+  return (data || []).map(formatOrder);
 }
 
 export async function createCallLog(payload) {
-  if (isMongoReady()) return asLean(await CallLog.create(payload));
-  const call = { id: crypto.randomUUID(), ...payload, createdAt: new Date().toISOString() };
-  memoryStore.calls.unshift(call);
-  return call;
+  const dbPayload = {
+    tenant_id: payload.tenantId,
+    caller_number: payload.callerNumber,
+    direction: payload.direction,
+    duration_seconds: payload.durationSeconds,
+    outcome: payload.outcome,
+    summary: payload.summary,
+    conversation_id: payload.conversationId,
+  };
+  const { data, error } = await supabase.from('call_logs').insert(dbPayload).select('*').single();
+  if (error) throw new Error(error.message);
+  return formatCallLog(data);
 }
 
 export async function getAnalytics(tenantId) {
@@ -160,4 +158,88 @@ function buildGreeting(vertical, agentName, businessName) {
   if (vertical === "clinic") return `Namaste! Main ${agentName} hoon, ${businessName} se. Main aapki kaise madad kar sakti hoon?`;
   if (vertical === "hotel") return `Good day! Thank you for calling ${businessName}. I'm ${agentName}, how may I assist you?`;
   return `Hi! I'm ${agentName} from ${businessName}. How can I help you today?`;
+}
+
+// Map snake_case from Supabase DB to camelCase for the frontend
+
+function formatTenant(t) {
+  if (!t) return null;
+  return {
+    ...t,
+    agentId: t.agent_id,
+    phoneNumberId: t.phone_number_id,
+    phoneNumber: t.phone_number,
+    agentStatus: t.agent_status,
+    agentName: t.agent_name,
+    agentLanguage: t.agent_language,
+    agentVoiceId: t.agent_voice_id,
+    agentGreeting: t.agent_greeting,
+    businessHoursStart: t.business_hours_start,
+    businessHoursEnd: t.business_hours_end,
+    whitelabelEnabled: t.whitelabel_enabled,
+    whitelabelBrand: t.whitelabel_brand,
+    createdAt: t.created_at,
+  };
+}
+
+function formatCallLog(c) {
+  if (!c) return null;
+  return {
+    ...c,
+    tenantId: c.tenant_id,
+    callerNumber: c.caller_number,
+    durationSeconds: c.duration_seconds,
+    conversationId: c.conversation_id,
+    createdAt: c.created_at,
+  };
+}
+
+function formatBooking(b) {
+  if (!b) return null;
+  return {
+    ...b,
+    tenantId: b.tenant_id,
+    callerNumber: b.caller_number,
+    callerName: b.caller_name,
+    callerPhone: b.caller_phone,
+    slotStart: b.slot_start,
+    slotEnd: b.slot_end,
+    googleEventId: b.google_event_id,
+    createdAt: b.created_at,
+  };
+}
+
+function formatOrder(o) {
+  if (!o) return null;
+  return {
+    ...o,
+    tenantId: o.tenant_id,
+    orderNumber: o.order_number,
+    customerName: o.customer_name,
+    customerPhone: o.customer_phone,
+    itemsSummary: o.items_summary,
+    expectedDelivery: o.expected_delivery,
+    createdAt: o.created_at,
+  };
+}
+
+export async function upsertIntegration(tenantId, type, updateData) {
+  const { data: existing } = await supabase.from('integrations')
+    .select('*').eq('tenant_id', tenantId).eq('type', type).single();
+
+  if (existing) {
+    const { data } = await supabase.from('integrations')
+      .update(updateData).eq('id', existing.id).select('*').single();
+    return data;
+  } else {
+    const { data } = await supabase.from('integrations')
+      .insert({ tenant_id: tenantId, type, ...updateData }).select('*').single();
+    return data;
+  }
+}
+
+export async function getIntegration(tenantId, type) {
+  const { data } = await supabase.from('integrations')
+    .select('*').eq('tenant_id', tenantId).eq('type', type).single();
+  return data || null;
 }

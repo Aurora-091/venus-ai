@@ -6,6 +6,7 @@ import { RunableBadge } from "@runablehq/website-runtime";
 
 import DashboardLayout from "./components/DashboardLayout";
 import Landing from "./pages/landing";
+import Pricing from "./pages/pricing";
 import SignIn from "./pages/sign-in";
 import SignUp from "./pages/sign-up";
 import Onboarding from "./pages/onboarding";
@@ -23,8 +24,8 @@ import { activeTenantState, tenantsState } from "./state/appState";
 
 function Spinner() {
   return (
-    <div className="min-h-screen bg-[#080C14] flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-[#1E2A3E] border-t-blue-500 rounded-full animate-spin" />
+    <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#333333] border-t-white rounded-full animate-spin" />
     </div>
   );
 }
@@ -56,12 +57,10 @@ function DashboardShell() {
         const list = r.tenants || [];
         setTenants(list);
         if (list.length === 0) {
-          // No workspace yet — hard redirect so session is re-read fresh
           navigate("/onboarding");
           return;
         }
         setTenant(prev => {
-          // Keep current selection if it still exists in the list, else default to first
           if (prev && list.find((t: any) => t.id === prev.id)) return prev;
           return list[0];
         });
@@ -96,7 +95,6 @@ function DashboardShell() {
         <Route path="/dashboard/integrations" component={() => <Integrations tenant={tenant} />} />
         <Route path="/dashboard/analytics" component={() => <Analytics tenant={tenant} tenants={tenants} />} />
         <Route path="/dashboard/settings" component={() => <Settings {...props} />} />
-        {/* Fallback */}
         <Route component={() => <Overview {...props} />} />
       </Switch>
     </DashboardLayout>
@@ -110,6 +108,7 @@ function App() {
     <Provider>
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/pricing" component={Pricing} />
         <Route path="/sign-in" component={SignIn} />
         <Route path="/sign-up" component={SignUp} />
         <Route path="/onboarding" component={() => (

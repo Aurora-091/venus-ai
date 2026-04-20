@@ -1,33 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #080C14;
-  --color-surface: #0F1623;
-  --color-surface-elevated: #161E2E;
-  --color-border: #1E2A3E;
-  --color-border-bright: #2A3A54;
-  --color-primary: #3B82F6;
-  --color-primary-dark: #2563EB;
-  --color-accent: #6366F1;
+  --color-bg: #000000;
+  --color-surface: #0A0A0A;
+  --color-surface-elevated: #111111;
+  --color-border: #222222;
+  --color-border-bright: #333333;
+  --color-primary: #EDEDED;
+  --color-primary-dark: #A1A1A1;
+  --color-accent: #0070F3;
   --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-text: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #475569;
+  --color-warning: #F5A623;
+  --color-danger: #E00;
+  --color-text: #EDEDED;
+  --color-text-secondary: #A1A1A1;
+  --color-text-muted: #666666;
 
-  --font-display: 'Instrument Serif', serif;
-  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
 * { box-sizing: border-box; }
 
 html, body {
-  background: #080C14;
-  color: #F1F5F9;
-  font-family: 'DM Sans', sans-serif;
+  background: #000000;
+  color: #EDEDED;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   margin: 0;
   padding: 0;
