@@ -38,7 +38,7 @@ jobs:
       run: npm run lint --if-present
 
     - name: Validate TypeScript build
-      run: npx tsc --noEmit
+      run: npm run type-check
       
     - name: Test production build
       run: npm run build
