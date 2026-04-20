@@ -86,6 +86,10 @@ npm --prefix frontend run dev
 npm --prefix backend run dev
 ```
 
+## Upstream Pull Request Notes
+
+When opening a pull request against the original repository, use this repository's `work` branch as the source branch and include a short summary of the tenant, calling, and realtime updates included in your change set.
+
 ## Realtime Flow
 
 The frontend connects to Socket.IO through Vite's `/socket.io` proxy. When a tenant is active, the client joins that tenant room. Backend events such as `tenant:created`, `tenant:updated`, and `call:created` update Recoil atoms in `frontend/src/state/appState.ts`.
