@@ -1,4 +1,4 @@
-import { atom } from "recoil";
+import { atom } from 'recoil';
 
 export type SessionUser = {
   id: string;
@@ -28,31 +28,31 @@ export type RealtimeEvent = {
 };
 
 export const sessionUserState = atom<SessionUser | null>({
-  key: "sessionUserState",
+  key: 'sessionUserState',
   default: null,
 });
 
 export const sessionLoadingState = atom({
-  key: "sessionLoadingState",
+  key: 'sessionLoadingState',
   default: true,
 });
 
 export const tenantsState = atom<TenantState[]>({
-  key: "tenantsState",
+  key: 'tenantsState',
   default: [],
 });
 
 export const activeTenantState = atom<TenantState | null>({
-  key: "activeTenantState",
+  key: 'activeTenantState',
   default: null,
 });
 
 export const socketConnectedState = atom({
-  key: "socketConnectedState",
+  key: 'socketConnectedState',
   default: false,
 });
 
 export const realtimeEventsState = atom<RealtimeEvent[]>({
-  key: "realtimeEventsState",
+  key: 'realtimeEventsState',
   default: [],
 });

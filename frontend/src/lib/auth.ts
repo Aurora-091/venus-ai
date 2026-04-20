@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { useRecoilState } from "recoil";
-import { sessionLoadingState, sessionUserState } from "../state/appState";
-import { supabase } from "./supabase";
+import { useCallback, useEffect, useState } from 'react';
+import { useRecoilState } from 'recoil';
+import { sessionLoadingState, sessionUserState } from '../state/appState';
+import { supabase } from './supabase';
 
 export const authClient = {
   useSession() {
@@ -10,17 +10,19 @@ export const authClient = {
 
     const loadSession = useCallback(async () => {
       setPending(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (session?.user) {
         // Extract metadata we stored
         const meta = session.user.user_metadata || {};
         setUser({
           id: session.user.id,
-          email: session.user.email || "",
-          name: meta.name || session.user.email?.split("@")[0] || "",
-          role: meta.role || "tenant_admin",
-          tenantId: meta.tenantId || "",
+          email: session.user.email || '',
+          name: meta.name || session.user.email?.split('@')[0] || '',
+          role: meta.role || 'tenant_admin',
+          tenantId: meta.tenantId || '',
         });
       } else {
         setUser(null);
@@ -30,11 +32,13 @@ export const authClient = {
 
     useEffect(() => {
       loadSession();
-      
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(() => {
         loadSession();
       });
-      
+
       return () => {
         subscription.unsubscribe();
       };
@@ -54,8 +58,8 @@ export const authClient = {
         options: {
           data: {
             name: body.name,
-          }
-        }
+          },
+        },
       });
       return { data, error };
     },
