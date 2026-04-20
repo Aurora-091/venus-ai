@@ -13,6 +13,7 @@
     "start": "npm --prefix backend run start",
     "db:generate": "npm --prefix backend run db:generate",
     "db:migrate": "npm --prefix backend run db:migrate",
-    "db:studio": "npm --prefix backend run db:studio"
+    "db:studio": "npm --prefix backend run db:studio",
+    "prepare": "husky"
   }
 }
