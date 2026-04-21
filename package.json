@@ -2,6 +2,9 @@
   "name": "aurora",
   "description": "Aurora — React + Vite frontend, Supabase, optional Node server (Express/Socket.IO), styled with Tailwind CSS v4",
   "private": true,
+  "devDependencies": {
+    "husky": "^9.1.7"
+  },
   "scripts": {
     "build": "npm --prefix frontend run build",
     "cf-typegen": "npm --prefix backend run cf-typegen",

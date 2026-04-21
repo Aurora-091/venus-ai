@@ -44,6 +44,8 @@ Create a small **Aurora** space:
 - Document **which variables** live in Vercel (typically `VITE_*` for the SPA) vs the Supabase dashboard — **names only**, never values in git.
 - For each PR: confirm the **Vercel preview URL** and that auth/data paths still work if you touched Supabase-related code.
 
+**Setup:** [integrations/vercel.md](integrations/vercel.md) (import GitHub repo, root vs `frontend` deploy options, previews).
+
 ## AI agents (Cursor / Codex)
 
 - Give agents a **Linear issue** with a clear acceptance sentence and optional Notion link for background.

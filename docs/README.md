@@ -9,6 +9,7 @@ This folder is the **source-of-truth map** for engineers and agents. It starts m
 | [Getting started](getting-started.md) | Clone, install, env vars, run locally |
 | [Workflow (tools)](workflow.md) | How Linear, Notion, GitHub, Vercel, Supabase fit together |
 | [Linear ↔ GitHub](integrations/linear-github.md) | Connect the repo to Linear; branch and PR conventions |
+| [Vercel](integrations/vercel.md) | Import repo, `frontend` root, env vars, preview deployments |
 | [Knowledge base](knowledge/README.md) | What lives in git vs Notion; how to grow docs |
 | [Architecture overview](architecture/overview.md) | Repo layout, runtime picture, stack |
 | [Runbooks template](operations/runbooks-template.md) | Checklist for deploy / rollback / incidents (fill in) |
