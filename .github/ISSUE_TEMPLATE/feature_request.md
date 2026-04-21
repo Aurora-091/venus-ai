@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for Venus AI
+about: Suggest an idea for Aurora
 title: "feat: [Short Title of Feature]"
 labels: enhancement
 assignees: ''

@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve Venus AI
+about: Create a report to help us improve Aurora
 title: "fix: [Short Title of Bug]"
 labels: bug
 assignees: ''

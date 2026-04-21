@@ -1,8 +1,12 @@
 ## Purpose
 What does this PR accomplish? (e.g. "Migrates Supabase auth", "Adds new profile modal")
 
-## Linear Ticket
-🎫 **Ticket Addressed:** `AUR-___` (if applicable)
+## Linear
+🎫 **Issue:** `INV-___` (required for feature/fix work — team key **INV**)
+
+**Branch:** If tied to Linear, prefer `feat/inv-___-short-slug` or `fix/inv-___-short-slug` (match the issue id).
+
+**Preview:** After CI, paste the **Vercel preview URL** if this change needs UI or auth verification.
 
 ## Type of Change
 - [ ] 🐛 Bug fix

@@ -1,6 +1,6 @@
 {
-  "name": "aurora-test-0093",
-  "description": "A MERN application with React, Recoil, Express, MongoDB, and Socket.IO",
+  "name": "aurora",
+  "description": "Aurora — React + Vite frontend, Supabase, optional Node server (Express/Socket.IO), styled with Tailwind CSS v4",
   "private": true,
   "scripts": {
     "build": "npm --prefix frontend run build",
