@@ -26,6 +26,8 @@ Create work in Linear first, then branch and open a PR that references the issue
 2. Prefer **PR titles** that include the issue id, e.g. `INV-42 Add booking export`.
 3. Use **branch names** that match Linear when helpful, e.g. `feat/inv-42-booking-export` (Linear can suggest a branch from an issue).
 
+**Step-by-step:** see [integrations/linear-github.md](integrations/linear-github.md).
+
 ## Notion (recommended layout)
 
 Create a small **Aurora** space:
