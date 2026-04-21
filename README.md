@@ -1,12 +1,15 @@
-# Venus AI
+# Aurora
 
-Venus AI is a modern SaaS application built with a React + Vite frontend, Supabase for backend-as-a-service (authentication and database), Recoil for client state, and styled with Tailwind CSS v4.
+Aurora is a modern SaaS application built with a React + Vite frontend, Supabase for backend-as-a-service (authentication and database), Recoil for client state, and styled with Tailwind CSS v4.
+
+**Repository:** [https://github.com/Aurora-091/venus-ai](https://github.com/Aurora-091/venus-ai)
 
 ## Structure
 
 - `frontend/` - React + Vite application, routing, UI components, Recoil state, and configuration.
 - `frontend/package.json` - Dependencies and build scripts for the frontend application.
-- `docs/` - Project notes and planning documentation.
+- `docs/` - Documentation hub: start at [`docs/README.md`](docs/README.md) (getting started, Linear↔GitHub, architecture, knowledge base).
+- `CONTRIBUTING.md` - How to contribute: Linear (`INV`), branches, PRs, and previews.
 
 The backend infrastructure has been completely migrated to **Supabase**, eliminating the need for a separate custom backend server. Authentication, data persistence, and real-time updates are all handled securely through the Supabase client.
 

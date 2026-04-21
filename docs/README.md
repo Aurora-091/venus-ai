@@ -1,0 +1,32 @@
+# Aurora documentation
+
+**Canonical repository:** [https://github.com/Aurora-091/venus-ai](https://github.com/Aurora-091/venus-ai)
+
+This folder is the **source-of-truth map** for engineers and agents. It starts minimal and grows with the product.
+
+| Doc | Purpose |
+|-----|---------|
+| [Getting started](getting-started.md) | Clone, install, env vars, run locally |
+| [Workflow (tools)](workflow.md) | How Linear, Notion, GitHub, Vercel, Supabase fit together |
+| [Linear ↔ GitHub](integrations/linear-github.md) | Connect the repo to Linear; branch and PR conventions |
+| [Knowledge base](knowledge/README.md) | What lives in git vs Notion; how to grow docs |
+| [Architecture overview](architecture/overview.md) | Repo layout, runtime picture, stack |
+| [Runbooks template](operations/runbooks-template.md) | Checklist for deploy / rollback / incidents (fill in) |
+
+## Project files elsewhere
+
+- [../CONTRIBUTING.md](../CONTRIBUTING.md) — PRs, `INV` issues, reviews
+- [../.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) — PR body
+
+## Older notes in repo
+
+| File | Notes |
+|------|--------|
+| [design.md](design.md) | VoiceOS-era design tokens (reuse or merge into current Aurora UI docs) |
+| [task.md](task.md) | Historical build checklist — not the live backlog (use **Linear**) |
+
+## Conventions
+
+- **Linear issue IDs** use team key **`INV`** (e.g. `INV-42`).
+- **Specs** that are short stay in Linear; longer write-ups go to **Notion** with the issue linked at the top.
+- **Secrets** never go in this repo—only variable *names* in docs when needed.
