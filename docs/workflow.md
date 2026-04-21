@@ -2,6 +2,8 @@
 
 This document describes how **Aurora** uses **Linear**, **Notion**, **GitHub**, **Vercel**, and **Supabase** together. It is optimized for a **small team** (two people) plus **AI agents** (Cursor, Codex): enough structure to stay aligned, not enough to slow you down.
 
+**New to these tools?** Start with [collaboration.md](collaboration.md) (simple loop and rules), then [notion-aurora-hub.md](notion-aurora-hub.md) when you build the Notion workspace.
+
 ## Roles of each tool
 
 | Tool | Owns |
@@ -38,6 +40,8 @@ Create a small **Aurora** space:
 4. **Specs** (optional database) — Title, owner, link to Linear issue, link to design.
 
 **Rule:** If it fits in one Linear issue description, keep it there. Use Notion when you need a longer spec or a durable runbook.
+
+**Optional automation:** A GitHub Action can append one row per **push to `main`** (merge counts) to a **Notion database** — not full generated docs. See [integrations/notion-github-automation.md](integrations/notion-github-automation.md).
 
 ## Vercel + Supabase
 

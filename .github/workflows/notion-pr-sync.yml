@@ -1,0 +1,25 @@
+# One Notion row per push to `main` (HEAD commit). No PR-open/sync noise.
+# Requires: NOTION_TOKEN, NOTION_DATABASE_ID — see docs/integrations/notion-github-automation.md
+
+name: Notion main push log
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  log-to-notion:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.NOTION_TOKEN != '' && secrets.NOTION_DATABASE_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log HEAD commit to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: node scripts/notion-pr-sync.mjs

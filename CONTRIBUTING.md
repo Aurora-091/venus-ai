@@ -5,7 +5,7 @@ Thank you for helping improve Aurora. This project uses a small, deliberate work
 ## Before you write code
 
 1. **Track work in Linear** — Create or pick up an issue in the **Invincib1e** team. Issue ids use the **`INV`** prefix (for example `INV-42`).
-2. **Read** [`docs/README.md`](docs/README.md) for the doc map, then [`docs/workflow.md`](docs/workflow.md) for how Linear, Notion, GitHub, Vercel, and Supabase fit together.
+2. **Read** [`docs/README.md`](docs/README.md) for the doc map. If you are new to Linear/Notion/GitHub together, read [`docs/collaboration.md`](docs/collaboration.md) first, then [`docs/workflow.md`](docs/workflow.md).
 
 ## Pull requests
 
