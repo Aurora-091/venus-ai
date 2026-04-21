@@ -7,9 +7,12 @@ This folder is the **source-of-truth map** for engineers and agents. It starts m
 | Doc | Purpose |
 |-----|---------|
 | [Getting started](getting-started.md) | Clone, install, env vars, run locally |
+| [Collaboration (beginners)](collaboration.md) | Linear ↔ GitHub ↔ Notion loop, working with teammates |
+| [Notion Aurora Hub](notion-aurora-hub.md) | Build the wiki, copy repo docs into Notion, checklists |
 | [Workflow (tools)](workflow.md) | How Linear, Notion, GitHub, Vercel, Supabase fit together |
 | [Linear ↔ GitHub](integrations/linear-github.md) | Connect the repo to Linear; branch and PR conventions |
 | [Vercel](integrations/vercel.md) | Import repo, `frontend` root, env vars, preview deployments |
+| [Notion ↔ GitHub automation](integrations/notion-github-automation.md) | One Notion row per **push to `main`** (Actions + secrets) |
 | [Knowledge base](knowledge/README.md) | What lives in git vs Notion; how to grow docs |
 | [Architecture overview](architecture/overview.md) | Repo layout, runtime picture, stack |
 | [Runbooks template](operations/runbooks-template.md) | Checklist for deploy / rollback / incidents (fill in) |
