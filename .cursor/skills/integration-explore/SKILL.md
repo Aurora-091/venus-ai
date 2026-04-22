@@ -23,7 +23,7 @@ User wants to **understand, spike, or plan** an external integration — not nec
 
 ## Rules
 
-- Prefer **reading existing repo patterns** (`backend/`, `docs/integrations/`) before proposing new architecture.
+- Prefer **reading existing repo patterns** (`backend/`) and **Notion → Integrations setup** before proposing new architecture.
 - If live calls need credentials, say what is **blocked** without them and what can be validated anyway (types, error handling).
 - For local full-stack verification, align with **`@cloud-agent-starter`** (ports, `VITE_API_BASE_URL`, etc.).
 - **Stop** at a written plan + optional thin scaffold unless the user asks to implement P0.
