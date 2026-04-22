@@ -13,7 +13,7 @@ permissions:
 jobs:
   log-to-notion:
     runs-on: ubuntu-latest
-    if: ${{ secrets.NOTION_TOKEN != '' && secrets.NOTION_DATABASE_ID != '' }}
+    # GITHUB_EVENT_PATH is set by the runner for `run` steps; do not override it in `env:`.
     steps:
       - uses: actions/checkout@v4
 
@@ -21,5 +21,4 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: node scripts/notion-pr-sync.mjs
