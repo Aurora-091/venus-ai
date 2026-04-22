@@ -17,25 +17,34 @@
 3. Under **Capabilities**, enable **Read content** and **Insert content** (create pages / database rows).
 4. Copy the **Internal Integration Secret** — use it as **`NOTION_TOKEN`** in GitHub.
 
-### 2. Create the database (exact property names)
+### 2. Create the database (schema the script expects)
 
-In Notion, create a **database**. Add these properties **with these names** (case-sensitive):
+The automation works with the **Commits** database shape (you can rename the database, but keep these properties unless you override env vars):
 
-| Property name | Type |
-|---------------|------|
-| **Name** | Title |
-| **PR** | URL *(stores the **commit** link on `main` pushes — name is legacy; still a URL)* |
-| **Updated** | Date |
+| Property name | Type | Filled by Actions |
+|---------------|------|-------------------|
+| **Name** | Title | `[main] &lt;sha&gt;: first line of commit` |
+| **PR** | URL | GitHub **commit** URL (column name is legacy) |
+| **Updated** | Date | Commit date |
+| **Branch** | Select | Always **`main`** (override with `NOTION_BRANCH_NAME`) |
+| **Status** | Status | **`Merged`** by default (override with `NOTION_STATUS_NAME`) |
+| **Author** | People | **Left empty** — GitHub accounts are not Notion users. Do **not** require this property for new rows. |
 
 Share the database with your integration: **⋯** → **Connections** → add the integration.
 
-Copy the **database ID** from the Notion URL (32-character id in the path). Use as **`NOTION_DATABASE_ID`**.
+**`NOTION_DATABASE_ID` in GitHub:** use only the database UUID from the Notion URL, **without** `?v=…` (that part is a **view** id, not the database).
 
-If you rename properties, use repository **Variables** or env in the workflow:
+Example: from `https://www.notion.so/34a14fb3db3080c6b961d7c7f6acd635?v=…` use **`34a14fb3db3080c6b961d7c7f6acd635`** or the dashed form — the script normalizes either.
+
+If you rename properties, set repository **Variables** or env in the workflow:
 
 - `NOTION_PROP_NAME` (default `Name`)
 - `NOTION_PROP_LINK` (default `PR`)
 - `NOTION_PROP_UPDATED` (default `Updated`)
+- `NOTION_PROP_BRANCH` (default `Branch`)
+- `NOTION_PROP_STATUS` (default `Status`)
+
+**Security:** Never paste the Notion token in chat, issues, or commits. If it was exposed, **revoke** it in Notion and create a new secret; update **`NOTION_TOKEN`** in GitHub Actions only.
 
 ### 3. Add GitHub secrets
 

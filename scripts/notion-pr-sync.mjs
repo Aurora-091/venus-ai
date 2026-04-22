@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /**
  * Append one row to a Notion database for each push to `refs/heads/main`.
- * One row per push event (HEAD commit only — avoids PR / per-commit clutter).
+ * One row per push event (HEAD commit only).
  *
  * Required env: NOTION_TOKEN, NOTION_DATABASE_ID
- * Reads GitHub webhook payload from GITHUB_EVENT_PATH (GitHub Actions).
+ * Optional: NOTION_BRANCH_NAME (default main), NOTION_STATUS_NAME (default Merged)
+ * Property names (if yours differ): NOTION_PROP_* — see docs/integrations/notion-github-automation.md
+ *
+ * "Author" (person) is not set — GitHub users are not Notion people. Leave Author empty in Notion
+ * or fill manually; do not mark Author as required on new rows.
  */
 
 import fs from "node:fs";
@@ -13,14 +17,27 @@ const NOTION_VERSION = "2022-06-28";
 const PROP_NAME = process.env.NOTION_PROP_NAME || "Name";
 const PROP_LINK = process.env.NOTION_PROP_LINK || "PR";
 const PROP_UPDATED = process.env.NOTION_PROP_UPDATED || "Updated";
+const PROP_BRANCH = process.env.NOTION_PROP_BRANCH || "Branch";
+const PROP_STATUS = process.env.NOTION_PROP_STATUS || "Status";
+
+const BRANCH_VALUE = process.env.NOTION_BRANCH_NAME || "main";
+const STATUS_VALUE = process.env.NOTION_STATUS_NAME || "Merged";
 
 function fail(msg) {
   console.error(msg);
   process.exit(1);
 }
 
+/** Accept 32-char hex or dashed UUID; strip accidental ?v= view query from pasted URLs. */
+function normalizeDatabaseId(raw) {
+  if (!raw) return "";
+  const base = raw.split("?")[0].trim().replace(/-/g, "");
+  if (base.length !== 32) return raw.split("?")[0].trim();
+  return `${base.slice(0, 8)}-${base.slice(8, 12)}-${base.slice(12, 16)}-${base.slice(16, 20)}-${base.slice(20, 32)}`;
+}
+
 const token = process.env.NOTION_TOKEN;
-const databaseId = process.env.NOTION_DATABASE_ID?.trim();
+const databaseId = normalizeDatabaseId(process.env.NOTION_DATABASE_ID || "");
 const eventPath = process.env.GITHUB_EVENT_PATH;
 
 if (!token || !databaseId) {
@@ -60,17 +77,25 @@ const firstLine = hc.message.split("\n")[0].slice(0, 1800);
 const rowTitle = `[main] ${short}: ${firstLine}`.slice(0, 2000);
 const updated = (hc.timestamp || new Date().toISOString()).slice(0, 10);
 
+const properties = {
+  [PROP_NAME]: {
+    title: [{ type: "text", text: { content: rowTitle } }],
+  },
+  [PROP_LINK]: { url: hc.url },
+  [PROP_UPDATED]: {
+    date: { start: updated },
+  },
+  [PROP_BRANCH]: {
+    select: { name: BRANCH_VALUE },
+  },
+  [PROP_STATUS]: {
+    status: { name: STATUS_VALUE },
+  },
+};
+
 const body = {
   parent: { database_id: databaseId },
-  properties: {
-    [PROP_NAME]: {
-      title: [{ type: "text", text: { content: rowTitle } }],
-    },
-    [PROP_LINK]: { url: hc.url },
-    [PROP_UPDATED]: {
-      date: { start: updated },
-    },
-  },
+  properties,
 };
 
 const res = await fetch("https://api.notion.com/v1/pages", {
