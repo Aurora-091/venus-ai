@@ -55,6 +55,30 @@ Create a small **Aurora** space:
 - Give agents a **Linear issue** with a clear acceptance sentence and optional Notion link for background.
 - Keep the human as **reviewer** for merges and for anything touching RLS or production config.
 
+**Project skills (shared prompts):** In this repo, reusable agent “jobs” live under [`.cursor/skills/`](../.cursor/skills/). In Composer, type **`@`** and pick a skill — for example **`cloud-agent-starter`** (env + runbook), **`feature-pr`** (ship a PR), **`issue-investigation`** (triage), **`docs-sync`** (update docs), **`integration-explore`** (spike a third-party integration). One chat ≈ one skill ≈ one task.
+
+## Git branching: `staging` then `main`
+
+Your idea — **merge work somewhere safe first, demo it, only then promote to `main`** — is exactly how many teams avoid a noisy or risky default branch. In industry you will see:
+
+| Pattern | Who uses it | Idea |
+|--------|-------------|------|
+| **GitHub Flow** | Startups, small teams | Short-lived branches → PR → **`main`**; `main` deploys. Simplest; relies on CI + previews. |
+| **Staging branch** | Teams that want a buffer | Feature branches → PR → **`staging`** → integration test / demo → PR **`staging` → `main`**. |
+| **Trunk-based** | Larger eng orgs | Very small PRs to **`main`** often; feature flags hide incomplete work. Heavier discipline. |
+
+**Recommendation for Aurora (two people):** use a long-lived **`staging`** branch as your **Trial / integration** line (same idea as “Test first”; we just use a standard name so tools and docs stay clear).
+
+1. **Day-to-day:** `feat/inv-42-…` (or `fix/…`) opens a **PR → `staging`** (not directly to `main`, unless you explicitly choose to).
+2. **Integration:** Merge to `staging`, run the app, use **Vercel preview** for that branch if you wire it, confirm the slice works with your teammate.
+3. **Promote:** When `staging` is good, open **one PR: `staging` → `main`** (title like `chore: promote staging to main` or list included INV ids). That keeps **`main`** as “we are willing to stand behind this.”
+
+**Hygiene (important):** merge or rebase **`main` → `staging`** regularly so the integration branch does not drift. After a successful promote, **`staging`** should match **`main`** at the tip (merge `main` back into `staging` if needed).
+
+**Hotfixes:** urgent production fixes can go **`fix/…` → `main`** in one PR, then merge **`main` → `staging`** so both lines stay aligned.
+
+**Messiness:** The clutter is usually **many open PRs**, not many branches — keep PRs small, close or merge stale branches, and use Linear for *what* is in flight, not branch names alone.
+
 ## Starter epic in Linear
 
 An epic **“Aurora engineering workflow”** and child tasks for Notion setup, GitHub integration, and env/preview documentation may already exist under the **Platform** project — use those as your onboarding checklist.
