@@ -6,6 +6,7 @@ This folder is the **source-of-truth map** for engineers and agents. It starts m
 
 | Doc | Purpose |
 |-----|---------|
+| [Roadmap](roadmap.md) | North star, Seed ready vs Customer ready, phased plan |
 | [Getting started](getting-started.md) | Clone, install, env vars, run locally |
 | [Collaboration (beginners)](collaboration.md) | Linear ↔ GitHub ↔ Notion loop, working with teammates |
 | [Notion Aurora Hub](notion-aurora-hub.md) | Build the wiki, copy repo docs into Notion, checklists |
