@@ -13,16 +13,17 @@ Setup, env vars, ports, or a user-visible flow **changed** and **docs are stale*
 
 ## Rules
 
-1. **Single source** — Canonical long-form docs live in **Notion** (Aurora **Engineering docs** library). Update the right child page there; the repo only keeps `docs/README.md` as a pointer to the wiki.
-2. **Be executable** — Commands, env var **names**, ports, URLs; remove dead steps in Notion.
-3. **Repo** — Change `CONTRIBUTING.md` or `README.md` only when the *pointer* or contributor gates change — not to duplicate the wiki.
-4. **Scope** — Doc-only unless code is wrong; then minimal code fix if the user wants.
-5. **Stop** when the relevant Notion page is accurate.
+1. **Single source** — Prefer updating existing files under `docs/` or `CONTRIBUTING.md` over new long pages.
+2. **Be executable** — Commands, env var **names**, ports, URLs; remove dead steps.
+3. **Notion** — At most **3 bullets** for the team hub if they mirror repo truth; do not duplicate the Linear backlog here.
+4. **Scope** — Doc-only unless a sentence proves code is wrong; then minimal code fix + doc in same PR if user wants.
+5. **Stop** when one coherent doc path is accurate; do not rewrite the whole wiki.
 
 ## Where to look first
 
-- Notion: **Engineering docs (canonical)** → pick the page that matches the change (workflow, integrations, getting started, …).
-- Env examples (still in repo): `frontend/.env.example`, `backend/.env.example`
+- `docs/README.md`, `docs/collaboration.md`, `docs/workflow.md`
+- Integration docs: `docs/integrations/`
+- Env examples: `frontend/.env.example`, `backend/.env.example`
 
 ## Verification
 

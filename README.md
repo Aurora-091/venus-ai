@@ -8,7 +8,7 @@ Aurora is a modern SaaS application built with a React + Vite frontend, Supabase
 
 - `frontend/` - React + Vite application, routing, UI components, Recoil state, and configuration.
 - `frontend/package.json` - Dependencies and build scripts for the frontend application.
-- `docs/` - Pointer to the **Notion wiki**: [`docs/README.md`](docs/README.md) (canonical docs live in Notion, not in git).
+- `docs/` - Documentation hub: start at [`docs/README.md`](docs/README.md) (getting started, Linear↔GitHub, architecture, knowledge base).
 - `CONTRIBUTING.md` - How to contribute: Linear (`INV`), branches, PRs, and previews.
 
 The backend infrastructure has been completely migrated to **Supabase**, eliminating the need for a separate custom backend server. Authentication, data persistence, and real-time updates are all handled securely through the Supabase client.

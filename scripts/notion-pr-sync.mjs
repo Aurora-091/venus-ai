@@ -5,7 +5,7 @@
  *
  * Required env: NOTION_TOKEN, NOTION_DATABASE_ID
  * Optional: NOTION_BRANCH_NAME (default main), NOTION_STATUS_NAME (default Merged)
- * Property names (if yours differ): NOTION_PROP_* — see Notion "Integrations setup" (Commits / GitHub automation)
+ * Property names (if yours differ): NOTION_PROP_* — see docs/integrations/notion-github-automation.md
  *
  * "Author" (person) is not set — GitHub users are not Notion people. Leave Author empty in Notion
  * or fill manually; do not mark Author as required on new rows.

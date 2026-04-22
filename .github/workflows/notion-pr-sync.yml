@@ -1,5 +1,5 @@
 # One Notion row per push to `main` (HEAD commit). No PR-open/sync noise.
-# Requires: NOTION_TOKEN, NOTION_DATABASE_ID — see Notion page "Integrations setup" (engineering docs)
+# Requires: NOTION_TOKEN, NOTION_DATABASE_ID — see docs/integrations/notion-github-automation.md
 
 name: Notion main push log
 
