@@ -22,14 +22,11 @@ Under it, create **empty child pages** with these titles:
 
 ## Step 2 — Fill **Home** with links (copy-paste)
 
-Put these on **Home** as a bullet list (adjust URLs if yours differ):
+Put **at most three** bullets on **Home** so Notion stays a light hub—**Linear owns the backlog**; do not duplicate issue lists here.
 
-- **Linear:** [https://linear.app/invincib1e](https://linear.app/invincib1e) (your team)
-- **GitHub:** [https://github.com/Aurora-091/venus-ai](https://github.com/Aurora-091/venus-ai)
-- **Docs (read-only on GitHub):** [docs/README.md on `main`](https://github.com/Aurora-091/venus-ai/blob/main/docs/README.md)
-- **Vercel:** your Vercel project dashboard URL
-- **Supabase:** your Supabase project dashboard URL
-- **Production app:** your live URL when you have one
+- **Work:** [Linear (Invincib1e)](https://linear.app/invincib1e) — issues, specs, status (no backlog mirror in Notion)
+- **Code + docs:** [GitHub repo](https://github.com/Aurora-091/venus-ai) and [Docs hub on `main`](https://github.com/Aurora-091/venus-ai/blob/main/docs/README.md) — versioned setup, env names, integrations
+- **Ops:** Your **Vercel** project, **Supabase** dashboard, and **production app** URL (one line each or a single “Dashboards” sub-page if you need more links)
 
 ---
 
@@ -87,7 +84,7 @@ In **Notion Settings → Connections**, add **Linear** if available. Then you ca
 ## Checklist
 
 - [-] **Aurora** parent page exists with **Home** + **Engineering** + **Runbooks** + **Knowledge**
-- [-] **Home** has links to Linear, GitHub, Vercel, Supabase, prod URL
+- [-] **Home** has the three hub bullets (Linear, GitHub + docs hub, ops dashboards / prod URL)
 - [ ] At least **collaboration** + **workflow** content is summarized or linked
 - [-] Team agrees: **Linear** = tasks, **Notion** = narrative, **GitHub** = code
 - [-] Optional: [Notion `main` push log](integrations/notion-github-automation.md) (GitHub Actions + database)
