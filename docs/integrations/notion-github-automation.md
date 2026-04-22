@@ -48,14 +48,30 @@ If you rename properties, set repository **Variables** or env in the workflow:
 
 ### 3. Add GitHub secrets
 
-In **GitHub** → **Aurora-091/venus-ai** → **Settings** → **Secrets and variables** → **Actions**:
+**Option A — use the repo script (recommended, stays on your machine)**
 
-| Secret | Value |
-|--------|--------|
-| `NOTION_TOKEN` | Internal integration secret |
-| `NOTION_DATABASE_ID` | Database UUID |
+1. [Install GitHub CLI](https://cli.github.com/) and run `gh auth login` if you have not already.
+2. In PowerShell, from the repository root:
 
-Do **not** commit these to the repo.
+   ```powershell
+   pwsh -File scripts/set-github-secrets.ps1
+   ```
+
+3. When prompted, paste the **Notion internal integration token** and the **database id** (no `?v=`). Nothing is written into git or into chat.
+
+You must be allowed to manage secrets on **Aurora-091/venus-ai** (e.g. admin or “secrets” access). If you get **HTTP 403**, ask an org owner to add you or to set the secrets for you.
+
+**Option B — GitHub website**
+
+1. **GitHub** → [Aurora-091/venus-ai](https://github.com/Aurora-091/venus-ai) → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**  
+2. Add:
+
+| Name | Value |
+|------|--------|
+| `NOTION_TOKEN` | Internal integration secret from Notion |
+| `NOTION_DATABASE_ID` | Database UUID only (no `?v=…`) |
+
+Do **not** commit secrets to the repo. Do **not** paste them into issues or AI chats.
 
 ### 4. Merge the workflow to `main`
 
