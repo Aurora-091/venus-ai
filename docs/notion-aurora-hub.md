@@ -86,11 +86,11 @@ In **Notion Settings → Connections**, add **Linear** if available. Then you ca
 
 ## Checklist
 
-- [ ] **Aurora** parent page exists with **Home** + **Engineering** + **Runbooks** + **Knowledge**
-- [ ] **Home** has links to Linear, GitHub, Vercel, Supabase, prod URL
+- [-] **Aurora** parent page exists with **Home** + **Engineering** + **Runbooks** + **Knowledge**
+- [-] **Home** has links to Linear, GitHub, Vercel, Supabase, prod URL
 - [ ] At least **collaboration** + **workflow** content is summarized or linked
-- [ ] Team agrees: **Linear** = tasks, **Notion** = narrative, **GitHub** = code
-- [ ] Optional: [Notion `main` push log](integrations/notion-github-automation.md) (GitHub Actions + database)
+- [-] Team agrees: **Linear** = tasks, **Notion** = narrative, **GitHub** = code
+- [-] Optional: [Notion `main` push log](integrations/notion-github-automation.md) (GitHub Actions + database)
 
 ---
 
