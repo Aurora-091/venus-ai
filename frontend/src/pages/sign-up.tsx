@@ -26,10 +26,7 @@ export default function SignUp() {
     let msg = fromHash ? parseOAuthError(fromHash) : null;
     if (!msg && fromSearch) {
       const q = new URLSearchParams(fromSearch.replace(/^\?/, ''));
-      msg =
-        q.get('error_description') ||
-        q.get('error_code') ||
-        q.get('error');
+      msg = q.get('error_description') || q.get('error_code') || q.get('error');
       if (msg) msg = decodeURIComponent(msg.replace(/\+/g, ' '));
     }
     if (msg) {

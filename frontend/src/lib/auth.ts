@@ -26,7 +26,9 @@ function displayNameFromUser(user: {
   if (typeof full === 'string' && full.trim()) return full.trim();
   const given = meta.given_name;
   const family = meta.family_name;
-  const parts = [given, family].filter((x) => typeof x === 'string' && x.trim());
+  const parts = [given, family].filter(
+    (x) => typeof x === 'string' && x.trim()
+  );
   if (parts.length) return parts.join(' ');
   return user.email?.split('@')[0] || '';
 }

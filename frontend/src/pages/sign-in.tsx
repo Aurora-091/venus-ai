@@ -25,10 +25,7 @@ export default function SignIn() {
     let msg = fromHash ? parseOAuthError(fromHash) : null;
     if (!msg && fromSearch) {
       const q = new URLSearchParams(fromSearch.replace(/^\?/, ''));
-      msg =
-        q.get('error_description') ||
-        q.get('error_code') ||
-        q.get('error');
+      msg = q.get('error_description') || q.get('error_code') || q.get('error');
       if (msg) msg = decodeURIComponent(msg.replace(/\+/g, ' '));
     }
     if (msg) {
@@ -41,7 +38,9 @@ export default function SignIn() {
     setError('');
     setGoogleLoading(true);
     try {
-      const res = await authClient.signIn.google({ redirectPath: '/dashboard' });
+      const res = await authClient.signIn.google({
+        redirectPath: '/dashboard',
+      });
       if (res.error) {
         setError(res.error.message || 'Google sign-in failed');
         setGoogleLoading(false);
