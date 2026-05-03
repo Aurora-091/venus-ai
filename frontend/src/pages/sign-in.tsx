@@ -1,12 +1,57 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { authClient } from '../lib/auth';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    const parseOAuthError = (raw: string) => {
+      const params = new URLSearchParams(raw.replace(/^#/, ''));
+      const desc =
+        params.get('error_description') ||
+        params.get('error_code') ||
+        params.get('error');
+      return desc ? decodeURIComponent(desc.replace(/\+/g, ' ')) : null;
+    };
+    const fromHash = typeof window !== 'undefined' ? window.location.hash : '';
+    const fromSearch =
+      typeof window !== 'undefined' ? window.location.search : '';
+    let msg = fromHash ? parseOAuthError(fromHash) : null;
+    if (!msg && fromSearch) {
+      const q = new URLSearchParams(fromSearch.replace(/^\?/, ''));
+      msg =
+        q.get('error_description') ||
+        q.get('error_code') ||
+        q.get('error');
+      if (msg) msg = decodeURIComponent(msg.replace(/\+/g, ' '));
+    }
+    if (msg) {
+      setError(msg);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const handleGoogle = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const res = await authClient.signIn.google({ redirectPath: '/dashboard' });
+      if (res.error) {
+        setError(res.error.message || 'Google sign-in failed');
+        setGoogleLoading(false);
+      }
+      // Success: browser redirects to Google
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Google sign-in failed');
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +91,23 @@ export default function SignIn() {
             Sign in to your VoiceOS account
           </p>
 
+          {error && (
+            <div className="text-xs text-[#E00] bg-[#E00]/10 border border-[#E00]/30 rounded-md px-3 py-2 mb-4">
+              {error}
+            </div>
+          )}
+
+          <GoogleSignInButton onClick={handleGoogle} loading={googleLoading} />
+
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#222]" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-[#0A0A0A] px-3 text-[#666]">or email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-[#A1A1A1] mb-1.5">
@@ -73,11 +135,6 @@ export default function SignIn() {
                 className="w-full bg-[#111] border border-[#333] focus:border-white rounded-md px-3.5 py-2.5 text-sm text-white placeholder-[#666] outline-none transition-colors"
               />
             </div>
-            {error && (
-              <div className="text-xs text-[#E00] bg-[#E00]/10 border border-[#E00]/30 rounded-md px-3 py-2">
-                {error}
-              </div>
-            )}
             <button
               type="submit"
               disabled={loading}

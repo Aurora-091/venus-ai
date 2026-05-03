@@ -31,6 +31,9 @@ Edit `frontend/.env`. Names must match the example file:
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key |
 | `VITE_API_BASE_URL` | API base path. Use **`/api`** locally so Vite proxies to the backend (see below). |
+| `VITE_APP_ORIGIN` | Optional. **Site URL** for Google OAuth `redirectTo` (e.g. `http://127.0.0.1:5682`). Must be listed in Supabase **Authentication → URL Configuration**. If unset, the browser’s `window.location.origin` is used. |
+
+**Google sign-in:** Enable the Google provider in **Supabase → Authentication → Providers → Google** and add your app URL (and `http://127.0.0.1:5682` for local dev) under **URL Configuration** → redirect URLs. Add the Google **Client ID/Secret** from Google Cloud Console; ensure redirect `https://<project>.supabase.co/auth/v1/callback` is authorized in Google.
 
 ```bash
 npm run dev
