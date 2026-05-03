@@ -63,8 +63,10 @@ Edit `backend/.env`:
 | `TWILIO_PHONE_NUMBER` | |
 | `GOOGLE_CLIENT_ID` | Optional Google integrations |
 | `GOOGLE_CLIENT_SECRET` | |
+| `TWILIO_WEBHOOK_SECRET` | Optional; `POST /api/twilio/resolve-inbound` accepts header `X-VoiceOS-Secret` when set |
+| `INTERNAL_WEBHOOK_SECRET` | Optional; `Authorization: Bearer …` for `POST /api/internal/voice/call-event` |
 
-```bash
+**Vision Phase 2 (live analytics):** Run `backend/migrations/20260503_call_logs_realtime_rls.sql` in the Supabase SQL editor so authenticated users can subscribe to `call_logs` via Realtime (tenant-scoped). Then enable **`call_logs`** under **Database → Replication** for the realtime publication. The Overview and Analytics pages refresh when new rows are inserted.
 npm run dev
 ```
 

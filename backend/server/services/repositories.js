@@ -18,18 +18,50 @@ export async function findUserById(id) {
 export async function listTenants(user) {
   if (user?.role === "super_admin") {
     const { data } = await supabase.from('tenants').select('*').order('created_at', { ascending: false });
-    return data || [];
+    return (data || []).map(formatTenant);
   }
   if (user?.tenantId) {
     const { data } = await supabase.from('tenants').select('*').eq('id', user.tenantId);
-    return data || [];
+    return (data || []).map(formatTenant);
   }
   return [];
 }
 
+/** Normalize to E.164-ish digits for lookup (+ prefix optional). */
+export function normalizePhoneForLookup(raw) {
+  if (!raw || typeof raw !== "string") return "";
+  let s = raw.trim().replace(/\s/g, "");
+  if (s.startsWith("+")) s = s.slice(1);
+  return s.replace(/\D/g, "");
+}
+
+/**
+ * Map inbound Twilio / CLI number to tenant (Vision Phase 2 — number → agent).
+ * Matches tenants.phone_number using digit-normalized equality.
+ */
+export async function findTenantIdByPhoneNumber(incomingNumber) {
+  const digits = normalizePhoneForLookup(incomingNumber);
+  if (!digits || digits.length < 10) return null;
+
+  const { data: tenantsRows } = await supabase
+    .from("tenants")
+    .select("id, phone_number")
+    .not("phone_number", "eq", "");
+
+  if (!tenantsRows?.length) return null;
+
+  for (const row of tenantsRows) {
+    const rowDigits = normalizePhoneForLookup(row.phone_number || "");
+    if (rowDigits && (rowDigits === digits || rowDigits.endsWith(digits) || digits.endsWith(rowDigits))) {
+      return row.id;
+    }
+  }
+  return null;
+}
+
 export async function findTenantById(id) {
   const { data } = await supabase.from('tenants').select('*').eq('id', id).single();
-  return data || null;
+  return data ? formatTenant(data) : null;
 }
 
 export async function createTenant(payload, user) {
@@ -63,14 +95,23 @@ export async function createTenant(payload, user) {
 }
 
 export async function updateTenant(id, payload) {
-  // Map JS casing to DB casing before update (if needed)
   const updates = {};
-  if (payload.name) updates.name = payload.name;
-  if (payload.timezone) updates.timezone = payload.timezone;
-  if (payload.agentId) updates.agent_id = payload.agentId;
-  if (payload.phoneNumberId) updates.phone_number_id = payload.phoneNumberId;
-  if (payload.phoneNumber) updates.phone_number = payload.phoneNumber;
-  if (payload.agentStatus) updates.agent_status = payload.agentStatus;
+  if (payload.name !== undefined) updates.name = payload.name;
+  if (payload.timezone !== undefined) updates.timezone = payload.timezone;
+  if (payload.agentId !== undefined) updates.agent_id = payload.agentId;
+  if (payload.phoneNumberId !== undefined) updates.phone_number_id = payload.phoneNumberId;
+  if (payload.phoneNumber !== undefined) updates.phone_number = payload.phoneNumber;
+  if (payload.agentStatus !== undefined) updates.agent_status = payload.agentStatus;
+  if (payload.agentName !== undefined) updates.agent_name = payload.agentName;
+  if (payload.agentLanguage !== undefined) updates.agent_language = payload.agentLanguage;
+  if (payload.agentVoiceId !== undefined) updates.agent_voice_id = payload.agentVoiceId;
+  if (payload.agentGreeting !== undefined) updates.agent_greeting = payload.agentGreeting;
+  if (payload.businessHoursStart !== undefined) {
+    updates.business_hours_start = payload.businessHoursStart;
+  }
+  if (payload.businessHoursEnd !== undefined) {
+    updates.business_hours_end = payload.businessHoursEnd;
+  }
 
   const { data, error } = await supabase.from('tenants').update(updates).eq('id', id).select('*').single();
   if (error || !data) return null;
@@ -96,7 +137,7 @@ export async function listOrders(tenantId) {
   return (data || []).map(formatOrder);
 }
 
-export async function createCallLog(payload) {
+export async function createCallLog(payload, io = null) {
   const dbPayload = {
     tenant_id: payload.tenantId,
     caller_number: payload.callerNumber,
@@ -108,7 +149,15 @@ export async function createCallLog(payload) {
   };
   const { data, error } = await supabase.from('call_logs').insert(dbPayload).select('*').single();
   if (error) throw new Error(error.message);
-  return formatCallLog(data);
+  const formatted = formatCallLog(data);
+  if (io?.to) {
+    try {
+      io.to(payload.tenantId).emit("call:created", formatted);
+    } catch {
+      /* ignore emit failures */
+    }
+  }
+  return formatted;
 }
 
 export async function getAnalytics(tenantId) {
@@ -164,8 +213,24 @@ function buildGreeting(vertical, agentName, businessName) {
 
 function formatTenant(t) {
   if (!t) return null;
+  const {
+    agent_id: _aid,
+    phone_number_id: _pid,
+    phone_number: _pn,
+    agent_status: _as,
+    agent_name: _an,
+    agent_language: _al,
+    agent_voice_id: _avi,
+    agent_greeting: _ag,
+    business_hours_start: _bhs,
+    business_hours_end: _bhe,
+    whitelabel_enabled: _we,
+    whitelabel_brand: _wb,
+    created_at: _ca,
+    ...rest
+  } = t;
   return {
-    ...t,
+    ...rest,
     agentId: t.agent_id,
     phoneNumberId: t.phone_number_id,
     phoneNumber: t.phone_number,
