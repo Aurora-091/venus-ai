@@ -436,7 +436,6 @@ export function createApiRouter(io) {
       summary: "Outbound call initiated through ElevenLabs",
       conversationId: data.conversation_id || "",
     }, io);
-    io.to(req.params.id).emit("call:created", call);
     res.status(202).json({ success: true, conversation_id: data.conversation_id || "", call });
   });
 
