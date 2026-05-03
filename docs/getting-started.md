@@ -62,6 +62,7 @@ Edit `backend/.env`:
 | `CLIENT_ORIGIN` | **`http://127.0.0.1:5682`** (CORS + Socket.IO) |
 | `SUPABASE_URL` | Same project URL as the frontend |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**server only**; never in Vite env) |
+| `SUPABASE_DATABASE_URL` | Optional Postgres URI — **INV-16** migration script only ([see below](#inv-16-call_logs-realtime-supabase)) |
 | `ELEVENLABS_API_KEY` | Required for real agent creation / voice paths when used |
 | `TWILIO_ACCOUNT_SID` | Required for outbound calls when used |
 | `TWILIO_AUTH_TOKEN` | |
@@ -71,11 +72,31 @@ Edit `backend/.env`:
 | `TWILIO_WEBHOOK_SECRET` | Optional; `POST /api/twilio/resolve-inbound` accepts header `X-VoiceOS-Secret` when set |
 | `INTERNAL_WEBHOOK_SECRET` | Optional; `Authorization: Bearer …` for `POST /api/internal/voice/call-event` |
 
-**Vision Phase 2 (live analytics):** Run `backend/migrations/20260503_call_logs_realtime_rls.sql` in the Supabase SQL editor so authenticated users can subscribe to `call_logs` via Realtime (tenant-scoped). Then enable **`call_logs`** under **Database → Replication** for the realtime publication. The Overview and Analytics pages refresh when new rows are inserted.
+```bash
 npm run dev
 ```
 
 **Listen address:** `http://127.0.0.1:5000` (API + Socket.IO on the same port).
+
+#### INV-16: `call_logs` Realtime (Supabase)
+
+Live refreshes on **Overview** and **Analytics** need tenant-scoped **SELECT** on `call_logs` and the table in the **`supabase_realtime`** publication.
+
+1. **Option A — SQL Editor (no local DB URL):** Run these files in order in **Supabase → SQL Editor**:
+   - `backend/migrations/20260503_call_logs_realtime_rls.sql`
+   - `backend/migrations/20260503_call_logs_realtime_publication.sql`  
+   If the publication block errors with permissions, keep RLS only and use **Database → Replication** to toggle **`call_logs`** for Realtime.
+
+2. **Option B — script:** Add **`SUPABASE_DATABASE_URL`** (Postgres URI from **Settings → Database**) to `backend/.env`, then:
+
+```bash
+cd backend
+npm run migrate:call-logs-realtime
+```
+
+3. **Dashboard:** **Database → Replication** — ensure **`call_logs`** is enabled for Realtime (matches publication step).
+
+4. **Verify:** Sign in, open **Overview**, trigger a new `call_logs` INSERT for your tenant (e.g. API or webhook); counts should refresh without a full reload.
 
 ### Run frontend + backend together
 
