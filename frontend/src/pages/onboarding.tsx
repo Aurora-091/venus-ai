@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../lib/api';
+import { api, getCalendarAuthUrl } from '../lib/api';
 
 const STEPS = ['Vertical', 'Details', 'Agent', 'Connect', 'Done'];
 
@@ -377,9 +377,7 @@ export default function Onboarding() {
                   <button
                     onClick={async () => {
                       try {
-                        const res = await api.get(
-                          `/tenants/${tenantId}/calendar/auth-url`
-                        );
+                        const res = await getCalendarAuthUrl(tenantId);
                         if (!res.url) {
                           alert(
                             res.error ||
@@ -399,11 +397,7 @@ export default function Onboarding() {
                       } catch (e: unknown) {
                         const msg =
                           e instanceof Error ? e.message : 'Request failed';
-                        alert(
-                          msg.includes('503')
-                            ? 'Google OAuth is not configured. Add credentials to backend/.env or skip below.'
-                            : msg
-                        );
+                        alert(msg);
                       }
                     }}
                     className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-200 transition-colors text-black font-semibold py-3 rounded-md text-sm"

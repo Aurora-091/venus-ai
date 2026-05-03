@@ -106,14 +106,21 @@ export async function updateTenant(id, payload) {
     const prev =
       rawRow?.settings && typeof rawRow.settings === 'object' ? rawRow.settings : {};
     const prevShopify = prev.shopify && typeof prev.shopify === 'object' ? prev.shopify : {};
-    const nextShopify = payload.metadata.shopify;
-    updates.settings = {
-      ...prev,
-      shopify: {
-        storeUrl: nextShopify.storeUrl ?? prevShopify.storeUrl ?? "",
-        adminToken: nextShopify.adminToken ?? prevShopify.adminToken ?? "",
-      },
-    };
+    if (payload.metadata.shopify == null) {
+      updates.settings = {
+        ...prev,
+        shopify: { storeUrl: "", adminToken: "" },
+      };
+    } else {
+      const nextShopify = payload.metadata.shopify;
+      updates.settings = {
+        ...prev,
+        shopify: {
+          storeUrl: nextShopify.storeUrl ?? prevShopify.storeUrl ?? "",
+          adminToken: nextShopify.adminToken ?? prevShopify.adminToken ?? "",
+        },
+      };
+    }
   }
 
   const { data, error } = await supabase.from('tenants').update(updates).eq('id', id).select('*').single();

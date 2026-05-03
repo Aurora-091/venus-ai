@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { api } from '../../lib/api';
+import { api, getCalendarAuthUrl } from '../../lib/api';
 import * as XLSX from 'xlsx';
 
 interface Props {
@@ -69,7 +69,7 @@ export default function Integrations({ tenant }: Props) {
     if (!tenant?.id) return;
     setConnecting('calendar');
     try {
-      const r = await api.get(`/tenants/${tenant.id}/calendar/auth-url`);
+      const r = await getCalendarAuthUrl(tenant.id);
       if (!r.url) {
         showMsg(
           r.error ||

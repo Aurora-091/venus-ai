@@ -40,6 +40,14 @@ export function createApiRouter(io) {
     const tenantId = req.query.state;
     if (!code || !tenantId) return res.status(400).send("Invalid callback");
 
+    if (!oauth2Client) {
+      return res
+        .status(503)
+        .send(
+          "Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env."
+        );
+    }
+
     try {
       const { tokens } = await oauth2Client.getToken(code);
       await upsertIntegration(tenantId, "google_calendar", {
@@ -218,6 +226,13 @@ export function createApiRouter(io) {
         return res.json({ result: "Google Calendar is not connected. I cannot check availability right now." });
       }
 
+      if (!oauth2Client) {
+        return res.json({
+          result:
+            "Google Calendar OAuth is not configured on the server, so availability cannot be checked right now.",
+        });
+      }
+
       oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
       
@@ -263,6 +278,13 @@ export function createApiRouter(io) {
       const integration = await getIntegration(req.params.id, "google_calendar");
       if (!integration?.connected || !integration.refresh_token) {
         return res.json({ result: "Google Calendar is not connected. I cannot book the appointment right now." });
+      }
+
+      if (!oauth2Client) {
+        return res.json({
+          result:
+            "Google Calendar OAuth is not configured on the server, so I cannot book the appointment right now.",
+        });
       }
 
       oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
