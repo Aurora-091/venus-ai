@@ -43,6 +43,8 @@ npm run dev
 
 Use when you need `/api`, WebSockets, or server-side integrations (Twilio, ElevenLabs, Google, etc.).
 
+New Supabase projects bootstrapped from this repo should run `backend/migrations/20260503_tenant_settings.sql` (or use the updated `backend/supabase_schema.sql`) so the `tenants.settings` column exists for Shopify keys and other Agent Studio JSON config.
+
 ```bash
 cd backend
 npm ci

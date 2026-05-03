@@ -66,6 +66,17 @@ export async function findTenantById(id) {
 
 export async function createTenant(payload, user) {
   const id = crypto.randomUUID();
+  const ext = payload.external_integrations;
+  const settings =
+    ext && (ext.shopifyUrl || ext.shopifyToken)
+      ? {
+          shopify: {
+            storeUrl: ext.shopifyUrl || "",
+            adminToken: ext.shopifyToken || "",
+          },
+        }
+      : {};
+
   const tenant = {
     id,
     name: payload.name,
@@ -76,6 +87,7 @@ export async function createTenant(payload, user) {
     agent_greeting: buildGreeting(payload.vertical, payload.agentName || "Aria", payload.name),
     status: "active",
     plan: "starter",
+    settings,
   };
 
   const { data: created, error } = await supabase.from('tenants').insert(tenant).select('*').single();
@@ -95,6 +107,9 @@ export async function createTenant(payload, user) {
 }
 
 export async function updateTenant(id, payload) {
+  const existing = await findTenantById(id);
+  if (!existing) return null;
+
   const updates = {};
   if (payload.name !== undefined) updates.name = payload.name;
   if (payload.timezone !== undefined) updates.timezone = payload.timezone;
@@ -111,6 +126,25 @@ export async function updateTenant(id, payload) {
   }
   if (payload.businessHoursEnd !== undefined) {
     updates.business_hours_end = payload.businessHoursEnd;
+  }
+
+  if (payload.metadata?.shopify !== undefined) {
+    const { data: rawRow } = await supabase
+      .from('tenants')
+      .select('settings')
+      .eq('id', id)
+      .single();
+    const prev =
+      rawRow?.settings && typeof rawRow.settings === 'object' ? rawRow.settings : {};
+    const prevShopify = prev.shopify && typeof prev.shopify === 'object' ? prev.shopify : {};
+    const nextShopify = payload.metadata.shopify;
+    updates.settings = {
+      ...prev,
+      shopify: {
+        storeUrl: nextShopify.storeUrl ?? prevShopify.storeUrl ?? "",
+        adminToken: nextShopify.adminToken ?? prevShopify.adminToken ?? "",
+      },
+    };
   }
 
   const { data, error } = await supabase.from('tenants').update(updates).eq('id', id).select('*').single();
@@ -213,20 +247,23 @@ function buildGreeting(vertical, agentName, businessName) {
 
 function formatTenant(t) {
   if (!t) return null;
+  const settings = t.settings && typeof t.settings === "object" ? t.settings : {};
+  const shopify = settings.shopify && typeof settings.shopify === "object" ? settings.shopify : {};
   const {
-    agent_id: _aid,
-    phone_number_id: _pid,
-    phone_number: _pn,
-    agent_status: _as,
-    agent_name: _an,
-    agent_language: _al,
-    agent_voice_id: _avi,
-    agent_greeting: _ag,
+    agent_id: _agent_id,
+    phone_number_id: _phone_number_id,
+    phone_number: _phone_number,
+    agent_status: _agent_status,
+    agent_name: _agent_name,
+    agent_language: _agent_language,
+    agent_voice_id: _agent_voice_id,
+    agent_greeting: _agent_greeting,
     business_hours_start: _bhs,
     business_hours_end: _bhe,
     whitelabel_enabled: _we,
     whitelabel_brand: _wb,
     created_at: _ca,
+    settings: _settingsDrop,
     ...rest
   } = t;
   return {
@@ -244,6 +281,13 @@ function formatTenant(t) {
     whitelabelEnabled: t.whitelabel_enabled,
     whitelabelBrand: t.whitelabel_brand,
     createdAt: t.created_at,
+    metadata: {
+      shopify: {
+        storeUrl: shopify.storeUrl || "",
+        adminToken: shopify.adminToken || "",
+      },
+    },
+    shopifyConnected: Boolean(shopify.storeUrl && shopify.adminToken),
   };
 }
 

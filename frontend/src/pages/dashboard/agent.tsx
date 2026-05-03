@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'wouter';
 import { api } from '../../lib/api';
-import { Copy, Plus, Boxes, Zap, Check, Phone } from 'lucide-react'; // Assume lucide-react is installed, if not we'll use placeholder SVGs or simple text. Wait, venus-ai likely has lucide-react. Standard. Let's use simple SVGs to be safe if not sure.
 
 interface Props {
   tenant?: any;
@@ -416,9 +416,12 @@ export default function AgentStudio({ tenant, onTenantUpdate }: Props) {
                       </p>
                     </div>
                   </div>
-                  <button className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg transition-colors w-full">
-                    Connect Google Calendar
-                  </button>
+                  <Link
+                    href="/dashboard/integrations"
+                    className="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-lg transition-colors font-medium"
+                  >
+                    Open Integrations to connect
+                  </Link>
                 </div>
               )}
 

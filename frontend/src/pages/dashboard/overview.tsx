@@ -68,9 +68,12 @@ export default function Overview({ tenant }: Props) {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [calls, setCalls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const loadData = useCallback(() => {
     if (!tenant?.id) return;
     setLoading(true);
+    setLoadError(null);
     Promise.all([
       api.get(`/tenants/${tenant.id}/analytics`),
       api.get(`/tenants/${tenant.id}/calls`),
@@ -79,7 +82,15 @@ export default function Overview({ tenant }: Props) {
         setAnalytics(a);
         setCalls((c.calls || []).slice(0, 5));
       })
-      .catch(() => {})
+      .catch((e: Error) => {
+        setLoadError(
+          e.message?.includes('Failed to fetch')
+            ? 'Could not reach the API. Start the backend on port 5000 (see docs/getting-started.md) or check your network.'
+            : e.message || 'Failed to load dashboard data.'
+        );
+        setAnalytics(null);
+        setCalls([]);
+      })
       .finally(() => setLoading(false));
   }, [tenant?.id]);
 
@@ -128,6 +139,12 @@ export default function Overview({ tenant }: Props) {
           <span className={`${verticalColor}`}>{tenant.vertical}</span>
         </p>
       </div>
+
+      {loadError && (
+        <div className="mb-5 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-300">
+          {loadError}
+        </div>
+      )}
 
       {/* Agent status banner */}
       {tenant.agentStatus !== 'active' && (

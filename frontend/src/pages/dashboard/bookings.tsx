@@ -16,11 +16,13 @@ export default function Bookings({ tenant }: Props) {
   const [bookings, setBookings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<'bookings' | 'orders'>('bookings');
 
   useEffect(() => {
     if (!tenant?.id) return;
     setLoading(true);
+    setLoadError(null);
     const ps: Promise<any>[] = [api.get(`/tenants/${tenant.id}/bookings`)];
     if (tenant.vertical === 'ecommerce') {
       ps.push(api.get(`/tenants/${tenant.id}/orders`));
@@ -30,7 +32,13 @@ export default function Bookings({ tenant }: Props) {
         setBookings(b.bookings || []);
         setOrders(o?.orders || []);
       })
-      .catch(() => {})
+      .catch((e: Error) => {
+        setLoadError(
+          e.message?.includes('Failed to fetch')
+            ? 'Could not load bookings — is the API running on port 5000?'
+            : e.message
+        );
+      })
       .finally(() => setLoading(false));
   }, [tenant?.id]);
 
@@ -57,6 +65,12 @@ export default function Bookings({ tenant }: Props) {
           Appointments and reservations made via your voice agent
         </p>
       </div>
+
+      {loadError && (
+        <div className="mb-5 text-sm px-4 py-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/20">
+          {loadError}
+        </div>
+      )}
 
       {/* Tabs — only for ecom */}
       {isEcom && (
