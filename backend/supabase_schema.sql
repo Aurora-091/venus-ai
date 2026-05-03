@@ -58,6 +58,8 @@ create table if not exists tenants (
   -- White-label
   whitelabel_enabled boolean default false,
   whitelabel_brand text default '',
+  -- Extensible key-value config (e.g. Shopify, custom fields) for Agent Studio
+  settings jsonb not null default '{}',
   created_at timestamptz not null default now()
 );
 
