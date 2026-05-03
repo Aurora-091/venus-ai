@@ -18,22 +18,33 @@ export async function findUserById(id) {
 export async function listTenants(user) {
   if (user?.role === "super_admin") {
     const { data } = await supabase.from('tenants').select('*').order('created_at', { ascending: false });
-    return data || [];
+    return (data || []).map(formatTenant);
   }
   if (user?.tenantId) {
     const { data } = await supabase.from('tenants').select('*').eq('id', user.tenantId);
-    return data || [];
+    return (data || []).map(formatTenant);
   }
   return [];
 }
 
 export async function findTenantById(id) {
   const { data } = await supabase.from('tenants').select('*').eq('id', id).single();
-  return data || null;
+  return data ? formatTenant(data) : null;
 }
 
 export async function createTenant(payload, user) {
   const id = crypto.randomUUID();
+  const ext = payload.external_integrations;
+  const settings =
+    ext && (ext.shopifyUrl || ext.shopifyToken)
+      ? {
+          shopify: {
+            storeUrl: ext.shopifyUrl || "",
+            adminToken: ext.shopifyToken || "",
+          },
+        }
+      : {};
+
   const tenant = {
     id,
     name: payload.name,
@@ -44,6 +55,7 @@ export async function createTenant(payload, user) {
     agent_greeting: buildGreeting(payload.vertical, payload.agentName || "Aria", payload.name),
     status: "active",
     plan: "starter",
+    settings,
   };
 
   const { data: created, error } = await supabase.from('tenants').insert(tenant).select('*').single();
@@ -63,14 +75,46 @@ export async function createTenant(payload, user) {
 }
 
 export async function updateTenant(id, payload) {
-  // Map JS casing to DB casing before update (if needed)
+  const existing = await findTenantById(id);
+  if (!existing) return null;
+
   const updates = {};
-  if (payload.name) updates.name = payload.name;
-  if (payload.timezone) updates.timezone = payload.timezone;
-  if (payload.agentId) updates.agent_id = payload.agentId;
-  if (payload.phoneNumberId) updates.phone_number_id = payload.phoneNumberId;
-  if (payload.phoneNumber) updates.phone_number = payload.phoneNumber;
-  if (payload.agentStatus) updates.agent_status = payload.agentStatus;
+  if (payload.name !== undefined) updates.name = payload.name;
+  if (payload.timezone !== undefined) updates.timezone = payload.timezone;
+  if (payload.agentId !== undefined) updates.agent_id = payload.agentId;
+  if (payload.phoneNumberId !== undefined) updates.phone_number_id = payload.phoneNumberId;
+  if (payload.phoneNumber !== undefined) updates.phone_number = payload.phoneNumber;
+  if (payload.agentStatus !== undefined) updates.agent_status = payload.agentStatus;
+
+  if (payload.agentName !== undefined) updates.agent_name = payload.agentName;
+  if (payload.agentLanguage !== undefined) updates.agent_language = payload.agentLanguage;
+  if (payload.agentVoiceId !== undefined) updates.agent_voice_id = payload.agentVoiceId;
+  if (payload.agentGreeting !== undefined) updates.agent_greeting = payload.agentGreeting;
+  if (payload.businessHoursStart !== undefined) {
+    updates.business_hours_start = payload.businessHoursStart;
+  }
+  if (payload.businessHoursEnd !== undefined) {
+    updates.business_hours_end = payload.businessHoursEnd;
+  }
+
+  if (payload.metadata?.shopify !== undefined) {
+    const { data: rawRow } = await supabase
+      .from('tenants')
+      .select('settings')
+      .eq('id', id)
+      .single();
+    const prev =
+      rawRow?.settings && typeof rawRow.settings === 'object' ? rawRow.settings : {};
+    const prevShopify = prev.shopify && typeof prev.shopify === 'object' ? prev.shopify : {};
+    const nextShopify = payload.metadata.shopify;
+    updates.settings = {
+      ...prev,
+      shopify: {
+        storeUrl: nextShopify.storeUrl ?? prevShopify.storeUrl ?? "",
+        adminToken: nextShopify.adminToken ?? prevShopify.adminToken ?? "",
+      },
+    };
+  }
 
   const { data, error } = await supabase.from('tenants').update(updates).eq('id', id).select('*').single();
   if (error || !data) return null;
@@ -164,8 +208,11 @@ function buildGreeting(vertical, agentName, businessName) {
 
 function formatTenant(t) {
   if (!t) return null;
+  const settings = t.settings && typeof t.settings === "object" ? t.settings : {};
+  const shopify = settings.shopify && typeof settings.shopify === "object" ? settings.shopify : {};
+  const { settings: _s, ...rest } = t;
   return {
-    ...t,
+    ...rest,
     agentId: t.agent_id,
     phoneNumberId: t.phone_number_id,
     phoneNumber: t.phone_number,
@@ -179,6 +226,13 @@ function formatTenant(t) {
     whitelabelEnabled: t.whitelabel_enabled,
     whitelabelBrand: t.whitelabel_brand,
     createdAt: t.created_at,
+    metadata: {
+      shopify: {
+        storeUrl: shopify.storeUrl || "",
+        adminToken: shopify.adminToken || "",
+      },
+    },
+    shopifyConnected: Boolean(shopify.storeUrl && shopify.adminToken),
   };
 }
 

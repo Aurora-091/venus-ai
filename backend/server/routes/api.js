@@ -19,11 +19,16 @@ import { requireAuth } from "../middleware/auth.js";
 export function createApiRouter(io) {
   const router = Router();
 
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    "http://localhost:5000/api/auth/google/callback"
-  );
+  const oauthConfigured =
+    Boolean(process.env.GOOGLE_CLIENT_ID) && Boolean(process.env.GOOGLE_CLIENT_SECRET);
+
+  const oauth2Client = oauthConfigured
+    ? new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        "http://localhost:5000/api/auth/google/callback"
+      )
+    : null;
 
   router.get("/ping", (_req, res) => {
     res.json({ ok: true, stack: "mern", ts: Date.now() });
@@ -406,21 +411,46 @@ export function createApiRouter(io) {
   });
 
   router.get("/tenants/:id/calendar/auth-url", (_req, res) => {
+    if (!oauth2Client) {
+      return res.status(503).json({
+        url: null,
+        configured: false,
+        error:
+          "Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env.",
+      });
+    }
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent", // Force to always get a refresh_token
       scope: ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly"],
       state: _req.params.id,
     });
-    res.json({ url });
+    res.json({ url, configured: true });
   });
 
   router.get("/tenants/:id/calendar/status", async (req, res) => {
+    if (!oauthConfigured) {
+      return res.json({
+        connected: false,
+        calendarId: "primary",
+        oauthConfigured: false,
+        message:
+          "Google Calendar OAuth is not configured on the server (missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).",
+      });
+    }
     const integration = await getIntegration(req.params.id, "google_calendar");
     if (integration?.connected) {
-      res.json({ connected: true, calendarId: integration.calendar_id });
+      res.json({
+        connected: true,
+        calendarId: integration.calendar_id,
+        oauthConfigured: true,
+      });
     } else {
-      res.json({ connected: false, calendarId: "primary" });
+      res.json({
+        connected: false,
+        calendarId: "primary",
+        oauthConfigured: true,
+      });
     }
   });
 

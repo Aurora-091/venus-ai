@@ -10,6 +10,8 @@ export default function Integrations({ tenant }: Props) {
   const [calStatus, setCalStatus] = useState<{
     connected: boolean;
     calendarId?: string;
+    oauthConfigured?: boolean;
+    message?: string;
   } | null>(null);
   const [sheetsStatus, setSheetsStatus] = useState<{
     connected: boolean;
@@ -31,21 +33,30 @@ export default function Integrations({ tenant }: Props) {
     setTimeout(() => setMsg(null), 5000);
   };
 
+  const [calLoadError, setCalLoadError] = useState<string | null>(null);
+
   const loadStatus = async () => {
     if (!tenant?.id) return;
     setLoading(true);
+    setCalLoadError(null);
     try {
-      const [cal, sheets] = await Promise.all([
-        api
-          .get(`/tenants/${tenant.id}/calendar/status`)
-          .catch(() => ({ connected: false })),
-        api
-          .get(`/tenants/${tenant.id}/sheets/status`)
-          .catch(() => ({ connected: false })),
-      ]);
+      const cal = await api.get(`/tenants/${tenant.id}/calendar/status`);
       setCalStatus(cal);
+    } catch (e: unknown) {
+      const msg =
+        e instanceof Error && e.message?.includes('Failed to fetch')
+          ? 'Cannot reach the API — start the backend on port 5000 for integration status.'
+          : e instanceof Error
+            ? e.message
+            : 'Failed to load calendar status.';
+      setCalLoadError(msg);
+    }
+    try {
+      const sheets = await api.get(`/tenants/${tenant.id}/sheets/status`);
       setSheetsStatus(sheets);
-    } catch {}
+    } catch {
+      setSheetsStatus({ connected: false });
+    }
     setLoading(false);
   };
 
@@ -60,7 +71,11 @@ export default function Integrations({ tenant }: Props) {
     try {
       const r = await api.get(`/tenants/${tenant.id}/calendar/auth-url`);
       if (!r.url) {
-        showMsg('Could not get auth URL', false);
+        showMsg(
+          r.error ||
+            'Calendar OAuth is not available. Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env.',
+          false
+        );
         return;
       }
       const popup = window.open(
@@ -288,6 +303,12 @@ export default function Integrations({ tenant }: Props) {
         </div>
       )}
 
+      {calLoadError && (
+        <div className="text-xs px-4 py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
+          {calLoadError}
+        </div>
+      )}
+
       {/* ── Tier 1 Core Integrations ── */}
       <div className="text-xs font-medium text-[#475569] uppercase tracking-wide mb-3">
         Tier 1 Integrations
@@ -332,7 +353,10 @@ export default function Integrations({ tenant }: Props) {
         connectedDetail={
           calStatus?.connected
             ? 'Calendar connected — agent uses real availability'
-            : undefined
+            : calStatus?.oauthConfigured === false
+              ? calStatus.message ||
+                'OAuth not configured on the server — add Google credentials to backend/.env.'
+              : undefined
         }
       />
 

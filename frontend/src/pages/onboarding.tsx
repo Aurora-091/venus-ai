@@ -380,6 +380,13 @@ export default function Onboarding() {
                         const res = await api.get(
                           `/tenants/${tenantId}/calendar/auth-url`
                         );
+                        if (!res.url) {
+                          alert(
+                            res.error ||
+                              'Google OAuth is not configured on the server. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to backend/.env, or skip for now.'
+                          );
+                          return;
+                        }
                         window.open(res.url, '_blank', 'width=500,height=600');
                         window.addEventListener(
                           'message',
@@ -389,11 +396,14 @@ export default function Onboarding() {
                           },
                           { once: true }
                         );
-                      } catch {
+                      } catch (e: unknown) {
+                        const msg =
+                          e instanceof Error ? e.message : 'Request failed';
                         alert(
-                          'Google OAuth not configured — skipping in demo mode'
+                          msg.includes('503')
+                            ? 'Google OAuth is not configured. Add credentials to backend/.env or skip below.'
+                            : msg
                         );
-                        setStep(4);
                       }
                     }}
                     className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-200 transition-colors text-black font-semibold py-3 rounded-md text-sm"

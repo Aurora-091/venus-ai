@@ -36,6 +36,7 @@ export default function Calls({ tenant }: Props) {
   const [outboundNumber, setOutboundNumber] = useState('');
   const [calling, setCalling] = useState(false);
   const [callMsg, setCallMsg] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
   const hasRealAgent =
     !!tenant?.agentId && !tenant.agentId.startsWith('local-');
   const hasRealPhoneNumber =
@@ -44,11 +45,18 @@ export default function Calls({ tenant }: Props) {
   useEffect(() => {
     if (!tenant?.id) return;
     setLoading(true);
+    setLoadError(null);
     Promise.all([
       api
         .get(`/tenants/${tenant.id}/calls`)
         .then((r) => setLocalCalls(r.calls || []))
-        .catch(() => {}),
+        .catch((e: Error) => {
+          setLoadError(
+            e.message?.includes('Failed to fetch')
+              ? 'API unreachable — run the backend on port 5000 for live call data.'
+              : e.message
+          );
+        }),
       hasRealAgent
         ? api
             .get(`/tenants/${tenant.id}/conversations`)
@@ -143,6 +151,12 @@ export default function Calls({ tenant }: Props) {
           </div>
         )}
       </div>
+
+      {loadError && (
+        <div className="mb-4 text-xs px-4 py-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
+          {loadError}
+        </div>
+      )}
 
       {callMsg && (
         <div
