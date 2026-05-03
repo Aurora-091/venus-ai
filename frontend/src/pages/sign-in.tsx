@@ -17,7 +17,7 @@ export default function SignIn() {
         params.get('error_description') ||
         params.get('error_code') ||
         params.get('error');
-      return desc ? decodeURIComponent(desc.replace(/\+/g, ' ')) : null;
+      return desc;
     };
     const fromHash = typeof window !== 'undefined' ? window.location.hash : '';
     const fromSearch =
@@ -26,7 +26,6 @@ export default function SignIn() {
     if (!msg && fromSearch) {
       const q = new URLSearchParams(fromSearch.replace(/^\?/, ''));
       msg = q.get('error_description') || q.get('error_code') || q.get('error');
-      if (msg) msg = decodeURIComponent(msg.replace(/\+/g, ' '));
     }
     if (msg) {
       setError(msg);
