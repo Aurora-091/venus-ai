@@ -1,15 +1,18 @@
 import { Router } from "express";
+import express from "express";
 import { google } from "googleapis";
 import {
   createCallLog,
   createTenant,
   deleteTenant,
   findTenantById,
+  findTenantIdByPhoneNumber,
   getAnalytics,
   listBookings,
   listCalls,
   listOrders,
   listTenants,
+  normalizePhoneForLookup,
   updateTenant,
   upsertIntegration,
   getIntegration,
@@ -30,8 +33,92 @@ export function createApiRouter(io) {
       )
     : null;
 
+  function getCalendarClientForTenant(tenantId) {
+    return getIntegration(tenantId, "google_calendar").then((integration) => {
+      if (!oauth2Client || !integration?.connected || !integration.refresh_token) {
+        return null;
+      }
+      oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
+      return google.calendar({ version: "v3", auth: oauth2Client });
+    });
+  }
+
   router.get("/ping", (_req, res) => {
     res.json({ ok: true, stack: "mern", ts: Date.now() });
+  });
+
+  /**
+   * Vision Phase 2 — map inbound Twilio number → tenant (configure as Twilio HTTP webhook / Studio HTTP request).
+   * Optional: set TWILIO_WEBHOOK_SECRET and send header X-VoiceOS-Secret.
+   */
+  router.post(
+    "/twilio/resolve-inbound",
+    express.urlencoded({ extended: true }),
+    (req, res, next) => {
+      const secret = process.env.TWILIO_WEBHOOK_SECRET;
+      if (secret && req.headers["x-voiceos-secret"] !== secret) {
+        return res.status(401).json({ error: "Invalid webhook secret" });
+      }
+      next();
+    },
+    async (req, res) => {
+      const to = req.body?.To || req.body?.Called || req.query?.to || "";
+      const from = req.body?.From || req.body?.Caller || "";
+      const tenantId = await findTenantIdByPhoneNumber(String(to));
+      res.json({
+        tenant_id: tenantId,
+        matched_to: to,
+        from,
+        digits_to: normalizePhoneForLookup(String(to)),
+      });
+    }
+  );
+
+  /**
+   * Internal webhook (ElevenLabs post-call, custom bridges). Inserts call_logs and notifies Socket.IO room.
+   * Set INTERNAL_WEBHOOK_SECRET and send Authorization: Bearer <secret>.
+   */
+  router.post("/internal/voice/call-event", async (req, res) => {
+    const expected = process.env.INTERNAL_WEBHOOK_SECRET;
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (expected && token !== expected) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const {
+      tenant_id: tenantId,
+      tenantId: tid,
+      caller_number: callerNumber,
+      callerNumber: cn,
+      direction = "inbound",
+      duration_seconds: durationSeconds,
+      durationSeconds: ds,
+      outcome = "completed",
+      summary = "",
+      conversation_id: conversationId,
+      conversationId: cid,
+    } = req.body || {};
+    const tId = tenantId || tid;
+    if (!tId) return res.status(400).json({ error: "tenant_id required" });
+
+    try {
+      const call = await createCallLog(
+        {
+          tenantId: tId,
+          callerNumber: callerNumber || cn || "",
+          direction,
+          durationSeconds: Number(durationSeconds ?? ds ?? 0) || 0,
+          outcome,
+          summary: summary || "",
+          conversationId: conversationId || cid || "",
+        },
+        io
+      );
+      res.status(201).json({ success: true, call });
+    } catch (e) {
+      console.error("[voice/call-event]", e);
+      res.status(500).json({ error: String(e?.message || e) });
+    }
   });
 
   // Open callbacks
@@ -39,6 +126,9 @@ export function createApiRouter(io) {
     const code = req.query.code;
     const tenantId = req.query.state;
     if (!code || !tenantId) return res.status(400).send("Invalid callback");
+    if (!oauth2Client) {
+      return res.status(503).send("Google OAuth is not configured on this server.");
+    }
 
     try {
       const { tokens } = await oauth2Client.getToken(code);
@@ -218,12 +308,14 @@ export function createApiRouter(io) {
         return res.json({ result: "Google Calendar is not connected. I cannot check availability right now." });
       }
 
-      oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
-      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-      
+      const calendar = await getCalendarClientForTenant(req.params.id);
+      if (!calendar) {
+        return res.json({ result: "Google Calendar OAuth is not configured on the server." });
+      }
+
       const timeMin = new Date(`${requestedDate}T00:00:00.000Z`);
       const timeMax = new Date(`${requestedDate}T23:59:59.999Z`);
-      
+
       const response = await calendar.events.list({
         calendarId: integration.calendar_id || "primary",
         timeMin: timeMin.toISOString(),
@@ -265,13 +357,15 @@ export function createApiRouter(io) {
         return res.json({ result: "Google Calendar is not connected. I cannot book the appointment right now." });
       }
 
-      oauth2Client.setCredentials({ refresh_token: integration.refresh_token });
-      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+      const calendar = await getCalendarClientForTenant(req.params.id);
+      if (!calendar) {
+        return res.json({ result: "Google Calendar OAuth is not configured on the server." });
+      }
 
       const startTime = new Date(slot);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
 
-      const event = await calendar.events.insert({
+      await calendar.events.insert({
         calendarId: integration.calendar_id || "primary",
         requestBody: {
           summary: `${service} - ${callerName}`,
@@ -341,7 +435,7 @@ export function createApiRouter(io) {
       outcome: "initiated",
       summary: "Outbound call initiated through ElevenLabs",
       conversationId: data.conversation_id || "",
-    });
+    }, io);
     io.to(req.params.id).emit("call:created", call);
     res.status(202).json({ success: true, conversation_id: data.conversation_id || "", call });
   });

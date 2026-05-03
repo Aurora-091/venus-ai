@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { useSupabaseCallRealtime } from '../../hooks/useSupabaseCallRealtime';
 
 interface Props {
   tenant?: any;
@@ -93,11 +94,11 @@ function DonutRing({
   );
 }
 
-export default function Analytics({ tenant, tenants }: Props) {
+export default function Analytics({ tenant }: Props) {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!tenant?.id) return;
     setLoading(true);
     api
@@ -106,6 +107,12 @@ export default function Analytics({ tenant, tenants }: Props) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant?.id]);
+
+  useSupabaseCallRealtime(tenant?.id, load);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (!tenant) {
     return (

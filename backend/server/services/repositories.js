@@ -27,6 +27,38 @@ export async function listTenants(user) {
   return [];
 }
 
+/** Normalize to E.164-ish digits for lookup (+ prefix optional). */
+export function normalizePhoneForLookup(raw) {
+  if (!raw || typeof raw !== "string") return "";
+  let s = raw.trim().replace(/\s/g, "");
+  if (s.startsWith("+")) s = s.slice(1);
+  return s.replace(/\D/g, "");
+}
+
+/**
+ * Map inbound Twilio / CLI number to tenant (Vision Phase 2 — number → agent).
+ * Matches tenants.phone_number using digit-normalized equality.
+ */
+export async function findTenantIdByPhoneNumber(incomingNumber) {
+  const digits = normalizePhoneForLookup(incomingNumber);
+  if (!digits || digits.length < 10) return null;
+
+  const { data: tenantsRows } = await supabase
+    .from("tenants")
+    .select("id, phone_number")
+    .not("phone_number", "eq", "");
+
+  if (!tenantsRows?.length) return null;
+
+  for (const row of tenantsRows) {
+    const rowDigits = normalizePhoneForLookup(row.phone_number || "");
+    if (rowDigits && (rowDigits === digits || rowDigits.endsWith(digits) || digits.endsWith(rowDigits))) {
+      return row.id;
+    }
+  }
+  return null;
+}
+
 export async function findTenantById(id) {
   const { data } = await supabase.from('tenants').select('*').eq('id', id).single();
   return data ? formatTenant(data) : null;
@@ -85,7 +117,6 @@ export async function updateTenant(id, payload) {
   if (payload.phoneNumberId !== undefined) updates.phone_number_id = payload.phoneNumberId;
   if (payload.phoneNumber !== undefined) updates.phone_number = payload.phoneNumber;
   if (payload.agentStatus !== undefined) updates.agent_status = payload.agentStatus;
-
   if (payload.agentName !== undefined) updates.agent_name = payload.agentName;
   if (payload.agentLanguage !== undefined) updates.agent_language = payload.agentLanguage;
   if (payload.agentVoiceId !== undefined) updates.agent_voice_id = payload.agentVoiceId;
@@ -140,7 +171,7 @@ export async function listOrders(tenantId) {
   return (data || []).map(formatOrder);
 }
 
-export async function createCallLog(payload) {
+export async function createCallLog(payload, io = null) {
   const dbPayload = {
     tenant_id: payload.tenantId,
     caller_number: payload.callerNumber,
@@ -152,7 +183,15 @@ export async function createCallLog(payload) {
   };
   const { data, error } = await supabase.from('call_logs').insert(dbPayload).select('*').single();
   if (error) throw new Error(error.message);
-  return formatCallLog(data);
+  const formatted = formatCallLog(data);
+  if (io?.to) {
+    try {
+      io.to(payload.tenantId).emit("call:created", formatted);
+    } catch {
+      /* ignore emit failures */
+    }
+  }
+  return formatted;
 }
 
 export async function getAnalytics(tenantId) {
@@ -210,7 +249,23 @@ function formatTenant(t) {
   if (!t) return null;
   const settings = t.settings && typeof t.settings === "object" ? t.settings : {};
   const shopify = settings.shopify && typeof settings.shopify === "object" ? settings.shopify : {};
-  const { settings: _s, ...rest } = t;
+  const {
+    agent_id: _agent_id,
+    phone_number_id: _phone_number_id,
+    phone_number: _phone_number,
+    agent_status: _agent_status,
+    agent_name: _agent_name,
+    agent_language: _agent_language,
+    agent_voice_id: _agent_voice_id,
+    agent_greeting: _agent_greeting,
+    business_hours_start: _bhs,
+    business_hours_end: _bhe,
+    whitelabel_enabled: _we,
+    whitelabel_brand: _wb,
+    created_at: _ca,
+    settings: _settingsDrop,
+    ...rest
+  } = t;
   return {
     ...rest,
     agentId: t.agent_id,

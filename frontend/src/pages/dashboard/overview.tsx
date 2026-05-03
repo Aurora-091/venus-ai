@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { api } from '../../lib/api';
+import { useSupabaseCallRealtime } from '../../hooks/useSupabaseCallRealtime';
 
 interface Props {
   tenant?: any;
@@ -69,7 +70,7 @@ export default function Overview({ tenant }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     if (!tenant?.id) return;
     setLoading(true);
     setLoadError(null);
@@ -92,6 +93,12 @@ export default function Overview({ tenant }: Props) {
       })
       .finally(() => setLoading(false));
   }, [tenant?.id]);
+
+  useSupabaseCallRealtime(tenant?.id, loadData);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (!tenant) {
     return (
