@@ -377,9 +377,9 @@ export default function Onboarding() {
                   <button
                     onClick={async () => {
                       try {
-                        const res = await api.get(
+                        const res = (await api.get(
                           `/tenants/${tenantId}/calendar/auth-url`
-                        );
+                        )) as { url?: string | null; error?: string };
                         if (!res.url) {
                           alert(
                             res.error ||
@@ -397,11 +397,12 @@ export default function Onboarding() {
                           { once: true }
                         );
                       } catch (e: unknown) {
+                        const err = e as Error & { status?: number };
                         const msg =
-                          e instanceof Error ? e.message : 'Request failed';
+                          err instanceof Error ? err.message : 'Request failed';
                         alert(
-                          msg.includes('503')
-                            ? 'Google OAuth is not configured. Add credentials to backend/.env or skip below.'
+                          err.status === 503
+                            ? 'Google OAuth is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to backend/.env, or use Skip below.'
                             : msg
                         );
                       }
