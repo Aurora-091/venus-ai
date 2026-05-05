@@ -25,11 +25,16 @@ export function createApiRouter(io) {
   const oauthConfigured =
     Boolean(process.env.GOOGLE_CLIENT_ID) && Boolean(process.env.GOOGLE_CLIENT_SECRET);
 
+  /** Must match an "Authorized redirect URI" for this Web client in Google Cloud Console (not Supabase's callback). */
+  const googleOAuthRedirectUri =
+    process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim() ||
+    "http://localhost:5000/api/auth/google/callback";
+
   const oauth2Client = oauthConfigured
     ? new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        "http://localhost:5000/api/auth/google/callback"
+        googleOAuthRedirectUri
       )
     : null;
 
