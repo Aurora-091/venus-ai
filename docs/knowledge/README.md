@@ -34,6 +34,7 @@ Grow these files as you learn:
 
 | File | When to update |
 |------|------------------|
+| `docs/knowledge/voice-engine-positioning.md` | When MVP engine choice or competitor story changes |
 | `docs/architecture/overview.md` | When stack or boundaries change |
 | `docs/operations/runbooks-template.md` | First time you deploy or cut over prod |
 | `docs/integrations/linear-github.md` | If integration steps change |
