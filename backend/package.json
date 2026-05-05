@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server/index.js",
-    "start": "node server/index.js",
+    "dev": "node server/server.js",
+    "start": "node server/server.js",
     "migrate:call-logs-realtime": "node scripts/apply-call-logs-realtime.mjs"
   },
   "dependencies": {
