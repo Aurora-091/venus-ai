@@ -116,8 +116,6 @@ export default function Settings({ tenant, onTenantUpdate }: Props) {
     );
   }
 
-  const currentPlan = PLANS.find((p) => p.id === tenant.plan) || PLANS[0];
-
   return (
     <div className="p-6 max-w-2xl">
       <div className="mb-6">

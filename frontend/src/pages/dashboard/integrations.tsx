@@ -639,7 +639,7 @@ function IntCard({
   desc,
   connected,
   loading,
-  badge,
+  badge: _badge,
   onConnect,
   onDisconnect,
   connectLabel,

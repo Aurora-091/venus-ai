@@ -749,7 +749,9 @@ function cleanError(raw: string): string {
           .filter(Boolean);
         if (messages?.length)
           return `${parsed.error}: ${[...new Set(messages)].join('; ')}`;
-      } catch {}
+      } catch {
+        /* ignore non-JSON ElevenLabs error details */
+      }
     }
     return parsed.error || raw;
   } catch {

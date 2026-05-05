@@ -61,7 +61,9 @@ export default function Calls({ tenant }: Props) {
         ? api
             .get(`/tenants/${tenant.id}/conversations`)
             .then((r) => setLiveCalls(r.conversations || []))
-            .catch(() => {})
+            .catch(() => {
+              /* live conversations optional */
+            })
         : Promise.resolve(),
     ]).finally(() => setLoading(false));
   }, [tenant?.id, hasRealAgent]);
@@ -75,7 +77,9 @@ export default function Calls({ tenant }: Props) {
         `/tenants/${tenant.id}/conversations/${conv.conversation_id}`
       );
       setConvDetail(r.conversation);
-    } catch {}
+    } catch {
+      /* keep prior UI state if conversation fetch fails */
+    }
     setLoadingDetail(false);
   };
 
@@ -101,7 +105,9 @@ export default function Calls({ tenant }: Props) {
       if (message.startsWith('{')) {
         try {
           message = JSON.parse(message).error || message;
-        } catch {}
+        } catch {
+          /* keep raw message if body is not JSON */
+        }
       }
       setCallMsg('Failed: ' + message);
     }

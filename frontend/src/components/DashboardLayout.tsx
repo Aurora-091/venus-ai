@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { authClient } from '../lib/auth';
 
@@ -26,7 +25,6 @@ export default function DashboardLayout({
   onTenantChange,
 }: Props) {
   const [location] = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSignOut = async () => {
     await authClient.signOut();

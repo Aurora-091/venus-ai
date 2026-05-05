@@ -293,7 +293,7 @@ export default function Onboarding() {
                     Agent Voice
                   </label>
                   <div className="space-y-2">
-                    {VOICES.map((v, idx) => (
+                    {VOICES.map((v) => (
                       <button
                         key={v.id}
                         onClick={() => {
