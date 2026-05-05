@@ -80,6 +80,7 @@ After the first successful deploy: **Settings** → **Domains** — add your cus
 | Build runs at repo root | **Root Directory** must be `frontend`. |
 | Blank page on refresh | Ensure `vercel.json` `rewrites` are present and redeploy. |
 | Wrong API URL on preview | Set `VITE_API_BASE_URL` per environment in Vercel. |
+| OAuth / email links send you to **localhost** | Remove **`VITE_APP_ORIGIN`** from Vercel (or never set it to localhost for Preview). The app uses the **current preview URL** for redirects. In **Supabase → Authentication → URL Configuration**, add **`https://*.vercel.app/**`** (and your production domain) under **Redirect URLs**. |
 | Env not applied | Scope variables to Preview vs Production; trigger a new deployment. |
 
 ## Related

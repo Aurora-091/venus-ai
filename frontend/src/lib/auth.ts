@@ -3,14 +3,18 @@ import { useRecoilState } from 'recoil';
 import { sessionLoadingState, sessionUserState } from '../state/appState';
 import { supabase } from './supabase';
 
-/** Public site URL for OAuth redirects (must match Supabase Auth → URL Configuration). */
+/**
+ * Public site URL for auth redirects (must match Supabase → Authentication → URL Configuration).
+ * In the browser we always use the current origin so Vercel preview / production host matches
+ * (VITE_* is baked at build time — a localhost VITE_APP_ORIGIN would break preview OAuth).
+ */
 export function getAppOrigin(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
   const fromEnv = import.meta.env.VITE_APP_ORIGIN;
   if (fromEnv && typeof fromEnv === 'string' && fromEnv.length > 0) {
     return fromEnv.replace(/\/$/, '');
-  }
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
   }
   return '';
 }
@@ -81,6 +85,7 @@ export const authClient = {
   },
   signUp: {
     email: async (body: { name: string; email: string; password: string }) => {
+      const origin = getAppOrigin();
       const { data, error } = await supabase.auth.signUp({
         email: body.email,
         password: body.password,
@@ -88,6 +93,7 @@ export const authClient = {
           data: {
             name: body.name,
           },
+          ...(origin ? { emailRedirectTo: `${origin}/onboarding` } : {}),
         },
       });
       return { data, error };
