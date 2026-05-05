@@ -128,23 +128,28 @@ export async function updateTenant(id, payload) {
     updates.business_hours_end = payload.businessHoursEnd;
   }
 
-  if (payload.metadata?.shopify !== undefined) {
+  if (payload.metadata && Object.prototype.hasOwnProperty.call(payload.metadata, "shopify")) {
     const { data: rawRow } = await supabase
       .from('tenants')
       .select('settings')
       .eq('id', id)
       .single();
     const prev =
-      rawRow?.settings && typeof rawRow.settings === 'object' ? rawRow.settings : {};
-    const prevShopify = prev.shopify && typeof prev.shopify === 'object' ? prev.shopify : {};
+      rawRow?.settings && typeof rawRow.settings === 'object' ? { ...rawRow.settings } : {};
     const nextShopify = payload.metadata.shopify;
-    updates.settings = {
-      ...prev,
-      shopify: {
-        storeUrl: nextShopify.storeUrl ?? prevShopify.storeUrl ?? "",
-        adminToken: nextShopify.adminToken ?? prevShopify.adminToken ?? "",
-      },
-    };
+    if (nextShopify === null) {
+      delete prev.shopify;
+      updates.settings = prev;
+    } else if (typeof nextShopify === "object") {
+      const prevShopify = prev.shopify && typeof prev.shopify === "object" ? prev.shopify : {};
+      updates.settings = {
+        ...prev,
+        shopify: {
+          storeUrl: nextShopify.storeUrl ?? prevShopify.storeUrl ?? "",
+          adminToken: nextShopify.adminToken ?? prevShopify.adminToken ?? "",
+        },
+      };
+    }
   }
 
   const { data, error } = await supabase.from('tenants').update(updates).eq('id', id).select('*').single();

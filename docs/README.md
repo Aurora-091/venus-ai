@@ -15,6 +15,7 @@ This folder is the **source-of-truth map** for engineers and agents. It starts m
 | [Vercel](integrations/vercel.md) | Import repo, `frontend` root, env vars, preview deployments |
 | [Notion ↔ GitHub automation](integrations/notion-github-automation.md) | One Notion row per **push to `main`** (Actions + secrets) |
 | [Knowledge base](knowledge/README.md) | What lives in git vs Notion; how to grow docs |
+| [Voice engine positioning](knowledge/voice-engine-positioning.md) | ElevenLabs vs Vapi vs competitors; MVP “not a wrapper” definition |
 | [Architecture overview](architecture/overview.md) | Repo layout, runtime picture, stack |
 | [Runbooks template](operations/runbooks-template.md) | Checklist for deploy / rollback / incidents (fill in) |
 

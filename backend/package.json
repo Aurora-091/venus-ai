@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server/index.js",
-    "start": "node server/index.js"
+    "dev": "node server/server.js",
+    "start": "node server/server.js",
+    "migrate:call-logs-realtime": "node scripts/apply-call-logs-realtime.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.5",
+    "pg": "^8.20.0",
     "concurrently": "^9.2.1"
   }
 }
