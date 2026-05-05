@@ -69,11 +69,14 @@ export default function Integrations({ tenant }: Props) {
     if (!tenant?.id) return;
     setConnecting('calendar');
     try {
-      const r = await api.get(`/tenants/${tenant.id}/calendar/auth-url`);
+      const r = (await api.get(`/tenants/${tenant.id}/calendar/auth-url`)) as {
+        url?: string | null;
+        error?: string;
+      };
       if (!r.url) {
         showMsg(
           r.error ||
-            'Calendar OAuth is not available. Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env.',
+            'Could not get a Google OAuth URL. Check backend env and calendar configuration.',
           false
         );
         return;
@@ -92,8 +95,13 @@ export default function Integrations({ tenant }: Props) {
         }
       };
       window.addEventListener('message', onMsg);
-    } catch (e: any) {
-      showMsg('Failed: ' + e.message, false);
+    } catch (e: unknown) {
+      const err = e as Error & { status?: number };
+      const detail =
+        err.status === 503
+          ? 'Google OAuth is not configured on the server (add GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).'
+          : err.message || 'Request failed';
+      showMsg('Failed: ' + detail, false);
     }
     setConnecting(null);
   };

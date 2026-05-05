@@ -127,7 +127,11 @@ export function createApiRouter(io) {
     const tenantId = req.query.state;
     if (!code || !tenantId) return res.status(400).send("Invalid callback");
     if (!oauth2Client) {
-      return res.status(503).send("Google OAuth is not configured on this server.");
+      return res
+        .status(503)
+        .send(
+          "<html><body><h1>Google OAuth not configured</h1><p>The server is missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET, so calendar connection is unavailable.</p></body></html>"
+        );
     }
 
     try {
@@ -312,7 +316,6 @@ export function createApiRouter(io) {
       if (!calendar) {
         return res.json({ result: "Google Calendar OAuth is not configured on the server." });
       }
-
       const timeMin = new Date(`${requestedDate}T00:00:00.000Z`);
       const timeMax = new Date(`${requestedDate}T23:59:59.999Z`);
 
